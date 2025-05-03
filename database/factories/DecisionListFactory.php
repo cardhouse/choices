@@ -35,4 +35,4 @@ class DecisionListFactory extends Factory
             'claimed_at' => $this->faker->dateTime(),
         ]);
     }
-} 
+}

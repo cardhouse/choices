@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Service class responsible for calculating and ranking scores for items in a decision list.
- * 
+ *
  * This service handles:
  * - Tallying wins for each item based on completed matchups
  * - Applying deterministic tiebreaker logic
@@ -19,17 +19,17 @@ class ScoreCalculator
 {
     /**
      * Calculate and return ranked scores for all items in a decision list.
-     * 
-     * @param DecisionList $list The decision list to calculate scores for
+     *
+     * @param  DecisionList  $list  The decision list to calculate scores for
      * @return Collection Collection of items with their scores and rankings
-     * 
+     *
      * @throws \RuntimeException If there are inconsistencies in the matchup data
      */
     public function forList(DecisionList $list): Collection
     {
         try {
             // Verify list exists in database
-            if (!$list->exists) {
+            if (! $list->exists) {
                 throw new \RuntimeException('List does not exist in database');
             }
 
@@ -71,7 +71,7 @@ class ScoreCalculator
                 if ($previousScore !== null && $item['score'] < $previousScore) {
                     $rank = $itemsWithRankings->count() + 1;
                 }
-                
+
                 $itemsWithRankings->push([
                     'item' => $item['item'],
                     'score' => $item['score'],
@@ -87,8 +87,8 @@ class ScoreCalculator
                 'list_id' => $list->id,
                 'error' => $e->getMessage(),
             ]);
-            
-            throw new \RuntimeException('Failed to calculate scores: ' . $e->getMessage());
+
+            throw new \RuntimeException('Failed to calculate scores: '.$e->getMessage());
         }
     }
-} 
+}

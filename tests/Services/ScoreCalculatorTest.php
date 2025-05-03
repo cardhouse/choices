@@ -18,7 +18,7 @@ class ScoreCalculatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->calculator = new ScoreCalculator();
+        $this->calculator = new ScoreCalculator;
     }
 
     /**
@@ -55,14 +55,14 @@ class ScoreCalculatorTest extends TestCase
         $results = $this->calculator->forList($list);
 
         $this->assertCount(3, $results);
-        
+
         // Verify scores and rankings
         $this->assertEquals(2, $results[0]['score']); // Item 1: 2 wins
         $this->assertEquals(1, $results[0]['rank']);
-        
+
         $this->assertEquals(1, $results[1]['score']); // Item 2: 1 win
         $this->assertEquals(2, $results[1]['rank']);
-        
+
         $this->assertEquals(0, $results[2]['score']); // Item 3: 0 wins
         $this->assertEquals(3, $results[2]['rank']);
     }
@@ -73,7 +73,7 @@ class ScoreCalculatorTest extends TestCase
     public function test_resolves_ties_by_label(): void
     {
         $list = DecisionList::factory()->create();
-        
+
         // Create items with specific labels to test tiebreaker
         $items = collect([
             Item::factory()->create(['list_id' => $list->id, 'label' => 'Banana']),
@@ -109,7 +109,7 @@ class ScoreCalculatorTest extends TestCase
         $this->assertEquals('Apple', $results[0]['item']->label);
         $this->assertEquals('Banana', $results[1]['item']->label);
         $this->assertEquals('Cherry', $results[2]['item']->label);
-        
+
         // All items should have the same rank since they're tied
         $this->assertEquals(1, $results[0]['rank']);
         $this->assertEquals(1, $results[1]['rank']);
@@ -145,10 +145,10 @@ class ScoreCalculatorTest extends TestCase
     public function test_handles_invalid_list(): void
     {
         $this->expectException(\RuntimeException::class);
-        
+
         // Create a list but don't save it
-        $list = new DecisionList();
-        
+        $list = new DecisionList;
+
         $this->calculator->forList($list);
     }
-} 
+}

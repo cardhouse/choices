@@ -34,6 +34,6 @@ class Item extends Model
 
     public function votes(): HasMany
     {
-        return $this->hasMany(Vote::class, 'selected_item_id');
+        return $this->hasMany(Vote::class, 'chosen_item_id');
     }
 }

@@ -13,7 +13,10 @@ class Vote extends Model
     protected $fillable = [
         'matchup_id',
         'user_id',
-        'selected_item_id',
+        'chosen_item_id',
+        'session_token',
+        'ip_address',
+        'user_agent',
     ];
 
     public function matchup(): BelongsTo
@@ -26,8 +29,8 @@ class Vote extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function selectedItem(): BelongsTo
+    public function chosenItem(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'selected_item_id');
+        return $this->belongsTo(Item::class, 'chosen_item_id');
     }
 }

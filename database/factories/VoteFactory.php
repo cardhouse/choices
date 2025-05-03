@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\Item;
 use App\Models\Matchup;
 use App\Models\User;
 use App\Models\Vote;
@@ -21,7 +20,7 @@ class VoteFactory extends Factory
             'matchup_id' => $matchup->id,
             'user_id' => User::factory(),
             'session_token' => $this->faker->optional()->uuid(),
-            'selected_item_id' => $chosenItem,
+            'chosen_item_id' => $chosenItem,
             'ip_address' => $this->faker->optional()->ipv4(),
             'user_agent' => $this->faker->optional()->userAgent(),
         ];
@@ -34,4 +33,4 @@ class VoteFactory extends Factory
             'session_token' => $this->faker->uuid(),
         ]);
     }
-} 
+}

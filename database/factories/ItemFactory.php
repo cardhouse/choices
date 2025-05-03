@@ -18,4 +18,4 @@ class ItemFactory extends Factory
             'description' => $this->faker->optional()->sentence(),
         ];
     }
-} 
+}

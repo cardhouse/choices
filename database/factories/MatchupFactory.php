@@ -31,6 +31,7 @@ class MatchupFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             $winner = $this->faker->randomElement([$attributes['item_a_id'], $attributes['item_b_id']]);
+
             return [
                 'status' => 'completed',
                 'winner_item_id' => $winner,
@@ -45,4 +46,4 @@ class MatchupFactory extends Factory
             'winner_item_id' => null,
         ]);
     }
-} 
+}

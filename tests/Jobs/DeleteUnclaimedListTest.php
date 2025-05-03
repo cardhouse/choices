@@ -56,8 +56,8 @@ class DeleteUnclaimedListTest extends TestCase
         $job = new DeleteUnclaimedList($list);
 
         $this->assertEquals(
-            ['list:' . $list->id, 'delete_unclaimed'],
+            ['list:'.$list->id, 'delete_unclaimed'],
             $job->tags()
         );
     }
-} 
+}

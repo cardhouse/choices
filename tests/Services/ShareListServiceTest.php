@@ -19,7 +19,7 @@ class ShareListServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new ShareListService();
+        $this->service = new ShareListService;
     }
 
     /**
@@ -78,7 +78,7 @@ class ShareListServiceTest extends TestCase
     public function test_throws_exception_when_unable_to_generate_unique_code(): void
     {
         $list = DecisionList::factory()->create();
-        
+
         // Create a code that will cause a collision
         ShareCode::factory()->create([
             'code' => 'TESTCODE1',
@@ -88,7 +88,7 @@ class ShareListServiceTest extends TestCase
         $service = $this->getMockBuilder(ShareListService::class)
             ->onlyMethods(['generateRandomCode'])
             ->getMock();
-        
+
         $service->expects($this->atLeast(5))
             ->method('generateRandomCode')
             ->willReturn('TESTCODE1');
@@ -121,4 +121,4 @@ class ShareListServiceTest extends TestCase
         $this->assertMatchesRegularExpression('/^[2-9A-HJ-NP-Z]{8}$/', $shareCode->code);
         $this->assertDoesNotMatchRegularExpression('/[01OIl]/', $shareCode->code);
     }
-} 
+}

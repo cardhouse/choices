@@ -2,17 +2,16 @@
 
 namespace App\Services;
 
+use App\Exceptions\ShareCodeGenerationException;
 use App\Models\DecisionList;
 use App\Models\ShareCode;
 use Carbon\Carbon;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Exceptions\ShareCodeGenerationException;
 
 /**
  * Service class responsible for generating and managing share codes for decision lists.
- * 
+ *
  * This service handles:
  * - Generating unique share codes
  * - Managing code expiration
@@ -43,9 +42,10 @@ class ShareListService
      * It uses a custom alphabet to avoid confusing characters and ensures uniqueness through
      * multiple generation attempts if necessary.
      *
-     * @param DecisionList $list The decision list to generate a share code for
-     * @param Carbon|null $expiresAt Optional expiration date for the share code
+     * @param  DecisionList  $list  The decision list to generate a share code for
+     * @param  Carbon|null  $expiresAt  Optional expiration date for the share code
      * @return ShareCode The newly created share code
+     *
      * @throws ShareCodeGenerationException If unable to generate a unique code after multiple attempts
      */
     public function generateCode(DecisionList $list, ?Carbon $expiresAt = null): ShareCode
@@ -69,8 +69,7 @@ class ShareListService
     /**
      * Deactivates any existing active share codes for the given list.
      *
-     * @param DecisionList $list The decision list to deactivate codes for
-     * @return void
+     * @param  DecisionList  $list  The decision list to deactivate codes for
      */
     private function deactivateExistingCodes(DecisionList $list): void
     {
@@ -83,6 +82,7 @@ class ShareListService
      * Generates a unique share code using the custom alphabet.
      *
      * @return string The generated code
+     *
      * @throws ShareCodeGenerationException If unable to generate a unique code
      */
     private function generateUniqueCode(): string
@@ -96,7 +96,7 @@ class ShareListService
             if ($attempts > self::MAX_GENERATION_ATTEMPTS) {
                 Log::error('Failed to generate unique share code after multiple attempts');
                 throw new ShareCodeGenerationException(
-                    'Unable to generate a unique share code after ' . self::MAX_GENERATION_ATTEMPTS . ' attempts'
+                    'Unable to generate a unique share code after '.self::MAX_GENERATION_ATTEMPTS.' attempts'
                 );
             }
         } while (ShareCode::where('code', $code)->exists());
@@ -120,4 +120,4 @@ class ShareListService
 
         return $code;
     }
-} 
+}

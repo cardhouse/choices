@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Service for managing list claiming and deletion jobs.
- * 
+ *
  * This service handles:
  * - Scheduling deletion of anonymous lists
  * - Claiming anonymous lists for registered users
@@ -26,19 +26,19 @@ class ListClaimService
 
     /**
      * Schedule a list for deletion if it remains unclaimed.
-     * 
+     *
      * This method dispatches a DeleteUnclaimedList job that will execute
      * after the configured delay unless the list is claimed.
      *
-     * @param DecisionList $list The list to schedule for deletion
-     * @return void
+     * @param  DecisionList  $list  The list to schedule for deletion
      */
     public function scheduleForDeletion(DecisionList $list): void
     {
-        if (!$list->is_anonymous) {
+        if (! $list->is_anonymous) {
             Log::warning('Attempted to schedule non-anonymous list for deletion', [
                 'list_id' => $list->id,
             ]);
+
             return;
         }
 
@@ -54,23 +54,23 @@ class ListClaimService
 
     /**
      * Claim an anonymous list for a user.
-     * 
+     *
      * This method:
      * 1. Associates the list with the user
      * 2. Marks the list as claimed
      * 3. Removes the anonymous flag
-     * 
+     *
      * All operations are performed in a transaction to ensure data consistency.
      *
-     * @param DecisionList $list The list to claim
-     * @param User $user The user claiming the list
+     * @param  DecisionList  $list  The list to claim
+     * @param  User  $user  The user claiming the list
      * @return DecisionList The updated list
-     * 
+     *
      * @throws \RuntimeException If the list is already claimed or not anonymous
      */
     public function claimList(DecisionList $list, User $user): DecisionList
     {
-        if (!$list->is_anonymous) {
+        if (! $list->is_anonymous) {
             throw new \RuntimeException('Cannot claim a non-anonymous list');
         }
 
@@ -92,4 +92,4 @@ class ListClaimService
             return $list;
         });
     }
-} 
+}

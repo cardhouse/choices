@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Job to delete an unclaimed decision list after a specified delay.
- * 
+ *
  * This job is dispatched when an anonymous list is created and will delete
  * the list after 30 minutes unless it has been claimed by a registered user.
  */
@@ -30,7 +30,7 @@ class DeleteUnclaimedList implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param DecisionList $list The list to potentially delete
+     * @param  DecisionList  $list  The list to potentially delete
      */
     public function __construct(
         public DecisionList $list
@@ -38,11 +38,9 @@ class DeleteUnclaimedList implements ShouldQueue
 
     /**
      * Execute the job.
-     * 
+     *
      * This method checks if the list is still unclaimed before deleting it.
      * If the list has been claimed, the job will exit without performing any action.
-     *
-     * @return void
      */
     public function handle(): void
     {
@@ -52,12 +50,13 @@ class DeleteUnclaimedList implements ShouldQueue
                 'list_id' => $this->list->id,
                 'claimed_at' => $this->list->claimed_at,
             ]);
+
             return;
         }
 
         // Delete the list and log the action
         $this->list->delete();
-        
+
         Log::info('Deleted unclaimed list', [
             'list_id' => $this->list->id,
             'created_at' => $this->list->created_at,
@@ -71,6 +70,6 @@ class DeleteUnclaimedList implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['list:' . $this->list->id, 'delete_unclaimed'];
+        return ['list:'.$this->list->id, 'delete_unclaimed'];
     }
-} 
+}

@@ -59,4 +59,4 @@ class ShareCodeFactory extends Factory
             'expires_at' => null,
         ]);
     }
-} 
+}

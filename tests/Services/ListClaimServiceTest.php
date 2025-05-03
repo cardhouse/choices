@@ -6,7 +6,6 @@ use App\Jobs\DeleteUnclaimedList;
 use App\Models\DecisionList;
 use App\Models\User;
 use App\Services\ListClaimService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -20,7 +19,7 @@ class ListClaimServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new ListClaimService();
+        $this->service = new ListClaimService;
     }
 
     /**
@@ -135,4 +134,4 @@ class ListClaimServiceTest extends TestCase
             return $job->delay !== null;
         });
     }
-} 
+}
