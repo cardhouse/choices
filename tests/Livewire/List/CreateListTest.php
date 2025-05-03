@@ -8,12 +8,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class CreateListTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_renders_successfully()
     {
         Livewire::test(CreateList::class)
@@ -25,7 +26,7 @@ class CreateListTest extends TestCase
             ->assertSee('Create List');
     }
 
-    /** @test */
+    #[Test]
     public function authenticated_user_can_create_list()
     {
         $user = User::factory()->create();
@@ -62,7 +63,7 @@ class CreateListTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function unauthenticated_user_can_create_anonymous_list()
     {
         Livewire::test(CreateList::class)
@@ -96,7 +97,7 @@ class CreateListTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function authenticated_user_can_create_anonymous_list()
     {
         $user = User::factory()->create();
@@ -134,7 +135,7 @@ class CreateListTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_required_fields()
     {
         Livewire::test(CreateList::class)
@@ -144,7 +145,7 @@ class CreateListTest extends TestCase
             ->assertHasErrors(['title', 'items', 'items.0']);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_item_count()
     {
         Livewire::test(CreateList::class)
@@ -165,7 +166,7 @@ class CreateListTest extends TestCase
             ->assertHasErrors(['items']);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_item_length()
     {
         Livewire::test(CreateList::class)
@@ -181,7 +182,7 @@ class CreateListTest extends TestCase
             ->assertHasErrors(['items.0']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_add_and_remove_items()
     {
         Livewire::test(CreateList::class)
