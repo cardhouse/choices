@@ -2,28 +2,28 @@
 
 namespace Tests\Policies;
 
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\User;
-use App\Policies\ItemPolicy;
+use App\Policies\DecisionListItemPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ItemPolicyTest extends TestCase
+class DecisionListItemPolicyTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ItemPolicy $policy;
+    private DecisionListItemPolicy $policy;
 
     private User $user;
 
-    private Item $item;
+    private DecisionListItem $item;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new ItemPolicy;
+        $this->policy = new DecisionListItemPolicy;
         $this->user = User::factory()->create();
-        $this->item = Item::factory()->create();
+        $this->item = DecisionListItem::factory()->create();
     }
 
     /**

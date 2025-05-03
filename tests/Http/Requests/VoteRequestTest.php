@@ -4,7 +4,7 @@ namespace Tests\Http\Requests;
 
 use App\Http\Requests\VoteRequest;
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
@@ -15,9 +15,9 @@ class VoteRequestTest extends TestCase
 
     private Matchup $matchup;
 
-    private Item $itemA;
+    private DecisionListItem $itemA;
 
-    private Item $itemB;
+    private DecisionListItem $itemB;
 
     protected function setUp(): void
     {
@@ -26,8 +26,8 @@ class VoteRequestTest extends TestCase
 
         // Create a list with two items and a matchup
         $list = DecisionList::factory()->create();
-        $this->itemA = Item::factory()->create(['list_id' => $list->id]);
-        $this->itemB = Item::factory()->create(['list_id' => $list->id]);
+        $this->itemA = DecisionListItem::factory()->create(['list_id' => $list->id]);
+        $this->itemB = DecisionListItem::factory()->create(['list_id' => $list->id]);
         $this->matchup = Matchup::factory()->create([
             'list_id' => $list->id,
             'item_a_id' => $this->itemA->id,
@@ -126,7 +126,7 @@ class VoteRequestTest extends TestCase
     public function test_chosen_item_id_must_be_in_matchup(): void
     {
         // Create a new item that doesn't belong to the matchup
-        $otherItem = Item::factory()->create(['list_id' => $this->matchup->list->id]);
+        $otherItem = DecisionListItem::factory()->create(['list_id' => $this->matchup->list->id]);
 
         $data = [
             'matchup_id' => $this->matchup->id,

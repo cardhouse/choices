@@ -51,6 +51,7 @@ A Laravel-based application that helps users make decisions through a round-robi
 
 ### Items Table
 - Stores entries associated with each list
+- Table name: `decision_list_items`
 - Fields:
   - `id` (primary key)
   - `list_id` (foreign key to decision_lists)
@@ -63,9 +64,9 @@ A Laravel-based application that helps users make decisions through a round-robi
 - Fields:
   - `id` (primary key)
   - `list_id` (foreign key to decision_lists)
-  - `item_a_id` (foreign key to items)
-  - `item_b_id` (foreign key to items)
-  - `winner_item_id` (nullable foreign key to items)
+  - `item_a_id` (foreign key to decision_list_items)
+  - `item_b_id` (foreign key to decision_list_items)
+  - `winner_item_id` (nullable foreign key to decision_list_items)
   - `status` (enum: pending, completed, skipped)
   - `round_number` (integer)
   - `timestamps`
@@ -77,7 +78,7 @@ A Laravel-based application that helps users make decisions through a round-robi
   - `matchup_id` (foreign key)
   - `user_id` (nullable foreign key)
   - `session_token` (nullable string)
-  - `chosen_item_id` (foreign key to items)
+  - `chosen_item_id` (foreign key to decision_list_items)
   - `ip_address` (nullable string)
   - `user_agent` (nullable string)
   - `timestamps`
@@ -109,12 +110,12 @@ A Laravel-based application that helps users make decisions through a round-robi
 ## Model Relationships
 
 ### DecisionList
-- Has many Items
+- Has many DecisionListItems
 - Has many Matchups
 - Belongs to User (optional)
 - Has many ShareCodes
 
-### Item
+### DecisionListItem
 - Belongs to DecisionList
 - Has many Matchups (as item_a)
 - Has many Matchups (as item_b)
@@ -122,15 +123,15 @@ A Laravel-based application that helps users make decisions through a round-robi
 
 ### Matchup
 - Belongs to DecisionList
-- Belongs to Item (as item_a)
-- Belongs to Item (as item_b)
-- Belongs to Item (as winner)
+- Belongs to DecisionListItem (as item_a)
+- Belongs to DecisionListItem (as item_b)
+- Belongs to DecisionListItem (as winner)
 - Has many Votes
 
 ### Vote
 - Belongs to Matchup
 - Belongs to User (optional)
-- Belongs to Item (as chosen_item)
+- Belongs to DecisionListItem (as chosen_item)
 
 ### ShareCode
 - Belongs to DecisionList
@@ -152,7 +153,7 @@ A Laravel-based application that helps users make decisions through a round-robi
   - `anonymous()`: Creates an anonymous list without user
   - `claimed()`: Creates a list that has been claimed
 
-#### Item Factory
+#### DecisionListItem Factory
 - Default: Creates an item with random label and optional description
 - Automatically associates with a DecisionList
 
@@ -202,8 +203,10 @@ A Laravel-based application that helps users make decisions through a round-robi
 - Added appropriate indexes and constraints
 - Set up foreign key relationships
 - Added additional fields for enhanced functionality
+- Renamed `items` table to `decision_list_items` for better clarity
+- Updated all model relationships and references
 
-### Epic 2 - Domain & Application Services (In Progress)
+### Epic 2 - Domain & Application Services (Completed)
 - Implemented MatchupGenerator service
 - Implemented ScoreCalculator service:
   - Calculates item rankings based on matchup wins
@@ -237,11 +240,11 @@ A Laravel-based application that helps users make decisions through a round-robi
     - Error cases
 - Enhanced Validation and Testing:
   - Implemented custom InMatchup validation rule for vote requests
-  - Fixed test cases in ItemPolicyTest and ListPolicyTest
+  - Fixed test cases in DecisionListItemPolicyTest and ListPolicyTest
   - Improved test coverage for anonymous list viewing
   - Added proper validation for chosen items in matchups
   - Implemented DataAwareRule for contextual validation
-  - All 96 tests passing with complete coverage
+  - All 104 tests passing with complete coverage
 - Added comprehensive test coverage with model factories
 - Set up testing environment with in-memory SQLite database
 

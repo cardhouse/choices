@@ -3,12 +3,12 @@
 namespace Database\Factories;
 
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class ItemFactory extends Factory
+class DecisionListItemFactory extends Factory
 {
-    protected $model = Item::class;
+    protected $model = DecisionListItem::class;
 
     public function definition(): array
     {

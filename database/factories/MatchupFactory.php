@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,8 +14,8 @@ class MatchupFactory extends Factory
     public function definition(): array
     {
         $list = DecisionList::factory()->create();
-        $itemA = Item::factory()->create(['list_id' => $list->id]);
-        $itemB = Item::factory()->create(['list_id' => $list->id]);
+        $itemA = DecisionListItem::factory()->create(['list_id' => $list->id]);
+        $itemB = DecisionListItem::factory()->create(['list_id' => $list->id]);
 
         return [
             'list_id' => $list->id,

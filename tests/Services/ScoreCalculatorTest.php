@@ -3,7 +3,7 @@
 namespace Tests\Services;
 
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use App\Services\ScoreCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,7 +28,7 @@ class ScoreCalculatorTest extends TestCase
     {
         // Create a list with 3 items
         $list = DecisionList::factory()->create();
-        $items = Item::factory()->count(3)->create(['list_id' => $list->id]);
+        $items = DecisionListItem::factory()->count(3)->create(['list_id' => $list->id]);
 
         // Create matchups where item 1 wins all, item 2 wins one, item 3 loses all
         Matchup::factory()->create([
@@ -76,9 +76,9 @@ class ScoreCalculatorTest extends TestCase
 
         // Create items with specific labels to test tiebreaker
         $items = collect([
-            Item::factory()->create(['list_id' => $list->id, 'label' => 'Banana']),
-            Item::factory()->create(['list_id' => $list->id, 'label' => 'Apple']),
-            Item::factory()->create(['list_id' => $list->id, 'label' => 'Cherry']),
+            DecisionListItem::factory()->create(['list_id' => $list->id, 'label' => 'Banana']),
+            DecisionListItem::factory()->create(['list_id' => $list->id, 'label' => 'Apple']),
+            DecisionListItem::factory()->create(['list_id' => $list->id, 'label' => 'Cherry']),
         ]);
 
         // Create matchups where all items have 1 win
@@ -122,7 +122,7 @@ class ScoreCalculatorTest extends TestCase
     public function test_handles_incomplete_matchups(): void
     {
         $list = DecisionList::factory()->create();
-        $items = Item::factory()->count(2)->create(['list_id' => $list->id]);
+        $items = DecisionListItem::factory()->count(2)->create(['list_id' => $list->id]);
 
         // Create a matchup without a winner
         Matchup::factory()->create([

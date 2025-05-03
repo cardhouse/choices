@@ -33,7 +33,7 @@ class DecisionList extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(Item::class, 'list_id');
+        return $this->hasMany(DecisionListItem::class, 'list_id');
     }
 
     public function matchups(): HasMany

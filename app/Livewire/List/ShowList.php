@@ -11,8 +11,6 @@ class ShowList extends Component
 {
     /**
      * The list to display.
-     *
-     * @var DecisionList
      */
     public DecisionList $list;
 
@@ -33,4 +31,4 @@ class ShowList extends Component
     {
         return view('livewire.list.show-list');
     }
-} 
+}

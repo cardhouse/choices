@@ -2,15 +2,15 @@
 
 namespace App\Policies;
 
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\User;
 
-class ItemPolicy
+class DecisionListItemPolicy
 {
     /**
      * Determine whether the user can view the item.
      */
-    public function view(User $user, Item $item): bool
+    public function view(User $user, DecisionListItem $item): bool
     {
         // Allow viewing if the user can view the parent list
         $listPolicy = new ListPolicy;
@@ -21,7 +21,7 @@ class ItemPolicy
     /**
      * Determine whether the user can create items.
      */
-    public function create(User $user, Item $item): bool
+    public function create(User $user, DecisionListItem $item): bool
     {
         // Allow creation if the user can update the parent list
         $listPolicy = new ListPolicy;
@@ -32,7 +32,7 @@ class ItemPolicy
     /**
      * Determine whether the user can update the item.
      */
-    public function update(User $user, Item $item): bool
+    public function update(User $user, DecisionListItem $item): bool
     {
         // Allow update if the user can update the parent list
         $listPolicy = new ListPolicy;
@@ -43,7 +43,7 @@ class ItemPolicy
     /**
      * Determine whether the user can delete the item.
      */
-    public function delete(User $user, Item $item): bool
+    public function delete(User $user, DecisionListItem $item): bool
     {
         // Allow deletion if the user can update the parent list
         $listPolicy = new ListPolicy;

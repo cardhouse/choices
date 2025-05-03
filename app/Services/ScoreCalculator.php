@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -44,7 +44,7 @@ class ScoreCalculator
             // Get all items with their scores
             $items = $list->items()
                 ->get()
-                ->map(function (Item $item) use ($wins) {
+                ->map(function (DecisionListItem $item) use ($wins) {
                     return [
                         'item' => $item,
                         'score' => $wins->get($item->id, 0),

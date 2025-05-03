@@ -3,7 +3,7 @@
 namespace Tests\Policies;
 
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use App\Models\User;
 use App\Models\Vote;
@@ -32,8 +32,8 @@ class VotePolicyTest extends TestCase
             'is_anonymous' => false,
             'user_id' => User::factory()->create()->id, // Create a different user to own the list
         ]);
-        $itemA = Item::factory()->create(['list_id' => $list->id]);
-        $itemB = Item::factory()->create(['list_id' => $list->id]);
+        $itemA = DecisionListItem::factory()->create(['list_id' => $list->id]);
+        $itemB = DecisionListItem::factory()->create(['list_id' => $list->id]);
         $matchup = Matchup::factory()->create([
             'list_id' => $list->id,
             'item_a_id' => $itemA->id,
@@ -86,7 +86,7 @@ class VotePolicyTest extends TestCase
         $this->vote->matchup->list->save();
 
         // Create a new item that doesn't belong to the matchup
-        $invalidItem = Item::factory()->create(['list_id' => $this->vote->matchup->list->id]);
+        $invalidItem = DecisionListItem::factory()->create(['list_id' => $this->vote->matchup->list->id]);
         $this->vote->chosen_item_id = $invalidItem->id;
 
         $this->assertFalse($this->policy->create($this->user, $this->vote));
@@ -115,7 +115,7 @@ class VotePolicyTest extends TestCase
     public function test_user_cannot_update_vote_with_invalid_item(): void
     {
         // Create a new item that doesn't belong to the matchup
-        $invalidItem = Item::factory()->create(['list_id' => $this->vote->matchup->list->id]);
+        $invalidItem = DecisionListItem::factory()->create(['list_id' => $this->vote->matchup->list->id]);
         $this->vote->chosen_item_id = $invalidItem->id;
 
         $this->assertFalse($this->policy->update($this->user, $this->vote));

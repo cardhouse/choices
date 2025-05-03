@@ -3,9 +3,9 @@
 namespace App\Providers;
 
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Models\Vote;
-use App\Policies\ItemPolicy;
+use App\Policies\DecisionListItemPolicy;
 use App\Policies\ListPolicy;
 use App\Policies\VotePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -19,7 +19,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         DecisionList::class => ListPolicy::class,
-        Item::class => ItemPolicy::class,
+        DecisionListItem::class => DecisionListItemPolicy::class,
         Vote::class => VotePolicy::class,
     ];
 
@@ -28,6 +28,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->registerPolicies();
+        //
     }
 }

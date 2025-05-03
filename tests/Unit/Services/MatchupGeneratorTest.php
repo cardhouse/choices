@@ -4,7 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Exceptions\InvalidListException;
 use App\Models\DecisionList;
-use App\Models\Item;
+use App\Models\DecisionListItem;
 use App\Services\MatchupGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,7 +17,7 @@ class MatchupGeneratorTest extends TestCase
     {
         // Create a list with 3 items
         $list = DecisionList::factory()->create();
-        $items = Item::factory()->count(3)->create(['list_id' => $list->id]);
+        $items = DecisionListItem::factory()->count(3)->create(['list_id' => $list->id]);
 
         // Generate matchups
         MatchupGenerator::forList($list);
@@ -29,7 +29,7 @@ class MatchupGeneratorTest extends TestCase
     public function test_throws_exception_for_list_with_less_than_two_items()
     {
         $list = DecisionList::factory()->create();
-        Item::factory()->create(['list_id' => $list->id]);
+        DecisionListItem::factory()->create(['list_id' => $list->id]);
 
         $this->expectException(InvalidListException::class);
         MatchupGenerator::forList($list);

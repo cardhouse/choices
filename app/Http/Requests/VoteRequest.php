@@ -32,7 +32,7 @@ class VoteRequest extends FormRequest
             'chosen_item_id' => [
                 'required',
                 'integer',
-                Rule::exists('items', 'id'),
+                Rule::exists('decision_list_items', 'id'),
                 new InMatchup,
             ],
         ];
