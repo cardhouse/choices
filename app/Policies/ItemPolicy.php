@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Item;
 use App\Models\User;
-use App\Policies\ListPolicy;
 
 class ItemPolicy
 {
@@ -14,7 +13,8 @@ class ItemPolicy
     public function view(User $user, Item $item): bool
     {
         // Allow viewing if the user can view the parent list
-        $listPolicy = new ListPolicy();
+        $listPolicy = new ListPolicy;
+
         return $listPolicy->view($user, $item->list);
     }
 
@@ -24,7 +24,8 @@ class ItemPolicy
     public function create(User $user, Item $item): bool
     {
         // Allow creation if the user can update the parent list
-        $listPolicy = new ListPolicy();
+        $listPolicy = new ListPolicy;
+
         return $listPolicy->update($user, $item->list);
     }
 
@@ -34,7 +35,8 @@ class ItemPolicy
     public function update(User $user, Item $item): bool
     {
         // Allow update if the user can update the parent list
-        $listPolicy = new ListPolicy();
+        $listPolicy = new ListPolicy;
+
         return $listPolicy->update($user, $item->list);
     }
 
@@ -44,7 +46,8 @@ class ItemPolicy
     public function delete(User $user, Item $item): bool
     {
         // Allow deletion if the user can update the parent list
-        $listPolicy = new ListPolicy();
+        $listPolicy = new ListPolicy;
+
         return $listPolicy->update($user, $item->list);
     }
 }

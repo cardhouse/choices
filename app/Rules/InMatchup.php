@@ -7,7 +7,7 @@ use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class InMatchup implements ValidationRule, DataAwareRule
+class InMatchup implements DataAwareRule, ValidationRule
 {
     /**
      * All of the data under validation.
@@ -33,12 +33,12 @@ class InMatchup implements ValidationRule, DataAwareRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!isset($this->data['matchup_id'])) {
+        if (! isset($this->data['matchup_id'])) {
             return;
         }
 
         $matchup = Matchup::find($this->data['matchup_id']);
-        if (!$matchup) {
+        if (! $matchup) {
             return;
         }
 
@@ -46,4 +46,4 @@ class InMatchup implements ValidationRule, DataAwareRule
             $fail('The chosen item must be one of the items in the matchup.');
         }
     }
-} 
+}

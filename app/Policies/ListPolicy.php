@@ -17,7 +17,7 @@ class ListPolicy
         // 2. List is unclaimed (anonymous)
         // 3. List has an active share code
         return $user->id === $list->user_id
-            || ($list->is_anonymous && !$list->claimed_at)
+            || ($list->is_anonymous && ! $list->claimed_at)
             || $list->shareCodes()->active()->exists();
     }
 

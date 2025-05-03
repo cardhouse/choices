@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Vote;
-use App\Policies\ListPolicy;
 
 class VotePolicy
 {
@@ -14,7 +13,8 @@ class VotePolicy
     public function view(User $user, Vote $vote): bool
     {
         // Allow viewing if the user can view the parent list
-        $listPolicy = new ListPolicy();
+        $listPolicy = new ListPolicy;
+
         return $listPolicy->view($user, $vote->matchup->list);
     }
 
@@ -26,7 +26,8 @@ class VotePolicy
         // Allow creation if:
         // 1. User can view the parent list
         // 2. Chosen item belongs to the matchup
-        $listPolicy = new ListPolicy();
+        $listPolicy = new ListPolicy;
+
         return $listPolicy->view($user, $vote->matchup->list)
             && ($vote->chosen_item_id === $vote->matchup->item_a_id
                 || $vote->chosen_item_id === $vote->matchup->item_b_id);

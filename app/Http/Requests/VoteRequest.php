@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Matchup;
 use App\Rules\InMatchup;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,7 +33,7 @@ class VoteRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('items', 'id'),
-                new InMatchup(),
+                new InMatchup,
             ],
         ];
     }
