@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Every **function**, **class**, and **method** must have a **docblock** explaining:
+  - What it does
+  - Its parameters and return values
+  - Any important side effects
+
+- For complex logic, include **inline comments** describing the purpose of key steps and decisions.
+
+- Use **section headers** (e.g., `/** Validation */`) to separate logical parts of the code.
+
+- Include **rationale** for chosen implementations if not self-evident. This helps explain **why** something is done a certain way.
+
+- Document **limitations**, **assumptions**, or **trade-offs** made during implementation.
+
+- Avoid vague or redundant comments (e.g., `// do something`). Be precise and useful.
