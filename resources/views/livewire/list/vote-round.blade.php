@@ -1,4 +1,7 @@
-<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+     x-data
+     @matchup-updated.window="$wire.$refresh()"
+     @voting-complete.window="$wire.$refresh()">
     <div class="max-w-3xl mx-auto">
         <!-- Progress Bar -->
         <div class="mb-8">

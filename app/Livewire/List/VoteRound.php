@@ -7,7 +7,7 @@ use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use App\Models\Vote;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -19,6 +19,7 @@ class VoteRound extends Component
     public int $totalMatchups = 0;
     public int $completedMatchups = 0;
     public float $progress = 0;
+    public array $matchupOrder = [];
 
     public function mount(DecisionList $list): void
     {
@@ -27,6 +28,13 @@ class VoteRound extends Component
         // Calculate total matchups using the formula n(n-1)/2
         $itemCount = $list->items()->count();
         $this->totalMatchups = ($itemCount * ($itemCount - 1)) / 2;
+        
+        // Get all pending matchups and randomize their order
+        $this->matchupOrder = $list->matchups()
+            ->where('status', 'pending')
+            ->pluck('id')
+            ->shuffle()
+            ->toArray();
         
         $this->completedMatchups = $list->matchups()
             ->where('status', 'completed')
@@ -38,9 +46,17 @@ class VoteRound extends Component
 
     public function loadNextMatchup(): void
     {
-        $this->currentMatchup = $this->list->matchups()
-            ->where('status', 'pending')
-            ->first();
+        // Get the next matchup ID from our randomized order
+        $nextMatchupId = array_shift($this->matchupOrder);
+        
+        if ($nextMatchupId) {
+            $this->currentMatchup = Matchup::find($nextMatchupId);
+        } else {
+            // If no more matchups in our order, check if there are any pending matchups
+            $this->currentMatchup = $this->list->matchups()
+                ->where('status', 'pending')
+                ->first();
+        }
 
         $this->updateProgress();
     }
@@ -48,40 +64,94 @@ class VoteRound extends Component
     public function vote(int $chosenItemId): void
     {
         if (!$this->currentMatchup) {
+            Log::info('No current matchup found');
             return;
         }
 
         // Validate that the chosen item is in the current matchup
         if (!in_array($chosenItemId, [$this->currentMatchup->item_a_id, $this->currentMatchup->item_b_id])) {
+            Log::info('Invalid choice', [
+                'chosen_id' => $chosenItemId,
+                'item_a_id' => $this->currentMatchup->item_a_id,
+                'item_b_id' => $this->currentMatchup->item_b_id
+            ]);
             $this->addError('vote', 'Invalid choice');
             return;
         }
 
-        // Create the vote
-        Vote::create([
-            'matchup_id' => $this->currentMatchup->id,
-            'user_id' => Auth::id(),
-            'chosen_item_id' => $chosenItemId,
-            'session_token' => Auth::check() ? null : Str::uuid(),
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
+        // Check if a vote already exists for this matchup
+        $existingVote = Vote::where('matchup_id', $this->currentMatchup->id)
+            ->where(function ($query) {
+                if (Auth::check()) {
+                    $query->where('user_id', Auth::id());
+                } else {
+                    $query->where('session_token', session()->getId());
+                }
+            })
+            ->first();
 
-        // Update the matchup
-        $this->currentMatchup->update([
-            'winner_item_id' => $chosenItemId,
-            'status' => 'completed',
-        ]);
+        if ($existingVote) {
+            Log::info('Updating existing vote', [
+                'vote_id' => $existingVote->id,
+                'old_choice' => $existingVote->chosen_item_id,
+                'new_choice' => $chosenItemId
+            ]);
+            // If the vote is for a different item, update it
+            if ($existingVote->chosen_item_id !== $chosenItemId) {
+                $existingVote->update([
+                    'chosen_item_id' => $chosenItemId,
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
 
-        // Update completed matchups count and progress
-        $this->completedMatchups++;
+                // Update the matchup winner
+                $this->currentMatchup->winner_item_id = $chosenItemId;
+                $this->currentMatchup->save();
+            }
+        } else {
+            Log::info('Creating new vote', [
+                'matchup_id' => $this->currentMatchup->id,
+                'user_id' => Auth::id(),
+                'chosen_id' => $chosenItemId
+            ]);
+            // Create the vote
+            Vote::create([
+                'matchup_id' => $this->currentMatchup->id,
+                'user_id' => Auth::id(),
+                'chosen_item_id' => $chosenItemId,
+                'session_token' => Auth::check() ? null : session()->getId(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            // Update the matchup
+            Log::info('Updating matchup status', [
+                'matchup_id' => $this->currentMatchup->id,
+                'before_status' => $this->currentMatchup->status
+            ]);
+            
+            $this->currentMatchup->winner_item_id = $chosenItemId;
+            $this->currentMatchup->status = 'completed';
+            $result = $this->currentMatchup->save();
+            
+            Log::info('Matchup status updated', [
+                'matchup_id' => $this->currentMatchup->id,
+                'after_status' => $this->currentMatchup->status,
+                'save_result' => $result
+            ]);
+
+            // Update completed matchups count
+            $this->completedMatchups++;
+        }
+
         $this->updateProgress();
         
         // Load the next matchup if there are more
         if ($this->completedMatchups < $this->totalMatchups) {
             $this->loadNextMatchup();
         } else {
-            $this->currentMatchup = null;
+            // All matchups are completed, redirect to results page
+            $this->redirect(route('lists.show', ['list' => $this->list]));
         }
     }
 

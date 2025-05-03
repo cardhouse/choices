@@ -16,6 +16,7 @@ class Matchup extends Model
         'item_a_id',
         'item_b_id',
         'winner_item_id',
+        'status',
     ];
 
     public function list(): BelongsTo
