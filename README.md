@@ -89,7 +89,11 @@ A Laravel-based application that helps users make decisions through a round-robi
   - `list_id` (foreign key to decision_lists)
   - `code` (unique string, 8 chars)
   - `expires_at` (nullable timestamp)
+  - `deactivated_at` (nullable timestamp)
   - `timestamps`
+- Indexes:
+  - Unique index on `code`
+  - Composite index on `list_id` and `deactivated_at`
 
 ## Technical Stack
 
@@ -100,6 +104,7 @@ A Laravel-based application that helps users make decisions through a round-robi
 - **Services**:
   - `MatchupGenerator`: Creates round-robin matchups for lists
   - `ScoreCalculator`: Calculates and ranks items based on matchup results
+  - `ShareListService`: Generates and manages unique share codes for lists
 
 ## Model Relationships
 
@@ -129,6 +134,8 @@ A Laravel-based application that helps users make decisions through a round-robi
 
 ### ShareCode
 - Belongs to DecisionList
+- Scopes:
+  - `active()`: Returns only active, non-expired codes
 
 ## Testing
 
@@ -203,6 +210,12 @@ A Laravel-based application that helps users make decisions through a round-robi
   - Handles tiebreakers using alphabetical ordering
   - Provides comprehensive error handling and logging
   - Includes full test coverage with various scenarios
+- Implemented ShareListService:
+  - Generates unique 8-character share codes
+  - Uses custom alphabet to avoid confusing characters
+  - Supports optional expiration dates
+  - Automatically deactivates existing codes
+  - Includes comprehensive test coverage
 - Added comprehensive test coverage with model factories
 - Set up testing environment with in-memory SQLite database
 

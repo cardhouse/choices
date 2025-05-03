@@ -14,13 +14,12 @@ return new class extends Migration
         Schema::create('share_codes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('list_id')->constrained('decision_lists')->onDelete('cascade');
-            $table->string('code', 8)->unique(); // 8 characters should be sufficient for unique codes
+            $table->string('code', 8)->unique();
             $table->timestamp('expires_at')->nullable();
+            $table->timestamp('deactivated_at')->nullable();
             $table->timestamps();
 
-            // Indexes
-            $table->index('list_id');
-            $table->index('expires_at');
+            $table->index(['list_id', 'deactivated_at']);
         });
     }
 
@@ -31,4 +30,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('share_codes');
     }
-};
+}; 

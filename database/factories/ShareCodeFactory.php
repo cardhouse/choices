@@ -8,24 +8,51 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ShareCodeFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = ShareCode::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         return [
             'list_id' => DecisionList::factory(),
-            'code' => strtoupper($this->faker->unique()->bothify('????####')),
-            'expires_at' => $this->faker->optional()->dateTimeBetween('now', '+30 days'),
+            'code' => $this->faker->regexify('[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}'),
+            'expires_at' => null,
+            'deactivated_at' => null,
         ];
     }
 
+    /**
+     * Indicate that the code is expired.
+     */
     public function expired(): static
     {
         return $this->state(fn (array $attributes) => [
-            'expires_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
+            'expires_at' => now()->subDay(),
         ]);
     }
 
+    /**
+     * Indicate that the code is deactivated.
+     */
+    public function deactivated(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'deactivated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Indicate that the code is permanent (no expiration).
+     */
     public function permanent(): static
     {
         return $this->state(fn (array $attributes) => [

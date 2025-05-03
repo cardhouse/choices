@@ -28,6 +28,11 @@ class ScoreCalculator
     public function forList(DecisionList $list): Collection
     {
         try {
+            // Verify list exists in database
+            if (!$list->exists) {
+                throw new \RuntimeException('List does not exist in database');
+            }
+
             // Get all completed matchups for the list
             $matchups = $list->matchups()
                 ->whereNotNull('winner_item_id')
@@ -48,9 +53,13 @@ class ScoreCalculator
 
             // Sort by score (descending) and then by label (ascending) for tiebreakers
             $sorted = $items->sortByDesc('score')
-                ->sortBy(function ($item) {
-                    return $item['item']->label;
-                }, SORT_NATURAL | SORT_FLAG_CASE);
+                ->groupBy('score')
+                ->map(function ($group) {
+                    return $group->sortBy(function ($item) {
+                        return $item['item']->label;
+                    });
+                })
+                ->flatten(1);
 
             // Add rankings
             $rank = 1;
@@ -58,6 +67,7 @@ class ScoreCalculator
             $itemsWithRankings = collect();
 
             foreach ($sorted as $item) {
+                // Keep same rank for tied scores
                 if ($previousScore !== null && $item['score'] < $previousScore) {
                     $rank = $itemsWithRankings->count() + 1;
                 }
