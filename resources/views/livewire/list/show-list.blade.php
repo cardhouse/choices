@@ -12,23 +12,34 @@
             @endif
         </div>
 
-        <!-- Items List -->
-        <div class="bg-white shadow rounded-lg p-6">
-            <div class="space-y-4">
-                @foreach ($list->items as $item)
-                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <span class="text-gray-900">{{ $item->label }}</span>
-                    </div>
-                @endforeach
+        @if($results)
+            <!-- Results View -->
+            <livewire:list.ranked-results :list="$list" />
+        @else
+            <!-- Items List -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="space-y-4">
+                    @foreach ($list->items as $item)
+                        <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                            <span class="text-gray-900">{{ $item->label }}</span>
+                        </div>
+                    @endforeach
+                </div>
             </div>
-        </div>
 
-        <!-- Actions -->
-        <div class="mt-8 flex justify-center">
-            <button wire:click="startVoting" 
-                    class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Start Voting
-            </button>
-        </div>
+            <!-- Actions -->
+            <div class="mt-8 flex justify-center space-x-4">
+                <button wire:click="startVoting" 
+                        class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Start Voting
+                </button>
+                @if($list->matchups()->where('status', 'completed')->exists())
+                    <a href="{{ route('lists.results', ['list' => $list]) }}"
+                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        View Results
+                    </a>
+                @endif
+            </div>
+        @endif
     </div>
 </div> 

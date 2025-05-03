@@ -151,7 +151,7 @@ class VoteRound extends Component
             $this->loadNextMatchup();
         } else {
             // All matchups are completed, redirect to results page
-            $this->redirect(route('lists.show', ['list' => $this->list]));
+            $this->redirect(route('lists.results', ['list' => $this->list]));
         }
     }
 

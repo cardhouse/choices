@@ -15,13 +15,20 @@ class ShowList extends Component
     public DecisionList $list;
 
     /**
+     * The view to display.
+     */
+    public ?string $view = null;
+
+    /**
      * Mount the component.
      *
      * @param  DecisionList  $list  The list to display
+     * @param  string|null  $view  The view to display
      */
-    public function mount(DecisionList $list): void
+    public function mount(DecisionList $list, ?string $view = null): void
     {
         $this->list = $list;
+        $this->view = $view;
     }
 
     /**
@@ -37,6 +44,14 @@ class ShowList extends Component
      */
     public function render()
     {
-        return view('livewire.list.show-list');
+        if ($this->view === 'results') {
+            return view('livewire.list.show-list', [
+                'results' => true
+            ]);
+        }
+
+        return view('livewire.list.show-list', [
+            'results' => false
+        ]);
     }
 }
