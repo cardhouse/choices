@@ -28,7 +28,10 @@ class VotePolicyTest extends TestCase
         $this->user = User::factory()->create();
 
         // Create a list with two items and a matchup
-        $list = DecisionList::factory()->create();
+        $list = DecisionList::factory()->create([
+            'is_anonymous' => false,
+            'user_id' => User::factory()->create()->id, // Create a different user to own the list
+        ]);
         $itemA = Item::factory()->create(['list_id' => $list->id]);
         $itemB = Item::factory()->create(['list_id' => $list->id]);
         $matchup = Matchup::factory()->create([

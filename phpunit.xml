@@ -23,6 +23,9 @@
         <testsuite name="Policies">
             <directory>tests/Policies</directory>
         </testsuite>
+        <testsuite name="Livewire">
+            <directory>tests/Livewire</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>

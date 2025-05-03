@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ListClaimService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +27,10 @@ class DecisionList extends Model
         'is_anonymous' => 'boolean',
     ];
 
+    protected $attributes = [
+        'is_anonymous' => false,
+    ];
+
     public function items(): HasMany
     {
         return $this->hasMany(Item::class, 'list_id');
@@ -44,5 +49,15 @@ class DecisionList extends Model
     public function shareCodes(): HasMany
     {
         return $this->hasMany(ShareCode::class, 'list_id');
+    }
+
+    /**
+     * Schedule the list for deletion if it is anonymous.
+     */
+    public function scheduleDeletion(): void
+    {
+        if ($this->is_anonymous) {
+            app(ListClaimService::class)->scheduleForDeletion($this);
+        }
     }
 }
