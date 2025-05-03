@@ -38,15 +38,14 @@ A Laravel-based application that helps users make decisions through a round-robi
 
 ## Database Schema
 
-### Lists Table
+### Decision Lists Table
 - Stores both anonymous and user-owned lists
 - Fields:
   - `id` (primary key)
   - `user_id` (nullable foreign key)
-  - `name` (string)
+  - `title` (string)
   - `description` (nullable text)
-  - `status` (enum: active, closed, completed)
-  - `expires_at` (nullable timestamp)
+  - `is_anonymous` (boolean, default: false)
   - `claimed_at` (nullable timestamp)
   - `timestamps`
 
@@ -54,7 +53,7 @@ A Laravel-based application that helps users make decisions through a round-robi
 - Stores entries associated with each list
 - Fields:
   - `id` (primary key)
-  - `list_id` (foreign key)
+  - `list_id` (foreign key to decision_lists)
   - `label` (string)
   - `description` (nullable text)
   - `timestamps`
@@ -63,10 +62,10 @@ A Laravel-based application that helps users make decisions through a round-robi
 - Stores round-robin pairings between items
 - Fields:
   - `id` (primary key)
-  - `list_id` (foreign key)
-  - `item_a_id` (foreign key)
-  - `item_b_id` (foreign key)
-  - `winner_item_id` (nullable foreign key)
+  - `list_id` (foreign key to decision_lists)
+  - `item_a_id` (foreign key to items)
+  - `item_b_id` (foreign key to items)
+  - `winner_item_id` (nullable foreign key to items)
   - `status` (enum: pending, completed, skipped)
   - `round_number` (integer)
   - `timestamps`
@@ -78,7 +77,7 @@ A Laravel-based application that helps users make decisions through a round-robi
   - `matchup_id` (foreign key)
   - `user_id` (nullable foreign key)
   - `session_token` (nullable string)
-  - `chosen_item_id` (foreign key)
+  - `chosen_item_id` (foreign key to items)
   - `ip_address` (nullable string)
   - `user_agent` (nullable string)
   - `timestamps`
@@ -87,7 +86,7 @@ A Laravel-based application that helps users make decisions through a round-robi
 - Stores unique codes for sharing lists
 - Fields:
   - `id` (primary key)
-  - `list_id` (foreign key)
+  - `list_id` (foreign key to decision_lists)
   - `code` (unique string, 8 chars)
   - `expires_at` (nullable timestamp)
   - `timestamps`
@@ -98,6 +97,35 @@ A Laravel-based application that helps users make decisions through a round-robi
 - **Frontend**: Blade/Livewire with Tailwind CSS
 - **Database**: MySQL
 - **Queues**: Laravel Queues for delayed deletions
+
+## Model Relationships
+
+### DecisionList
+- Has many Items
+- Has many Matchups
+- Belongs to User (optional)
+- Has many ShareCodes
+
+### Item
+- Belongs to DecisionList
+- Has many Matchups (as item_a)
+- Has many Matchups (as item_b)
+- Has many Votes (through matchups)
+
+### Matchup
+- Belongs to DecisionList
+- Belongs to Item (as item_a)
+- Belongs to Item (as item_b)
+- Belongs to Item (as winner)
+- Has many Votes
+
+### Vote
+- Belongs to Matchup
+- Belongs to User (optional)
+- Belongs to Item (as chosen_item)
+
+### ShareCode
+- Belongs to DecisionList
 
 ## Installation
 

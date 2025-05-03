@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('share_codes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('list_id')->constrained()->onDelete('cascade');
+            $table->foreignId('list_id')->constrained('decision_lists')->onDelete('cascade');
             $table->string('code', 8)->unique(); // 8 characters should be sufficient for unique codes
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();

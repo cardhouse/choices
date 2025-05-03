@@ -11,19 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('lists', function (Blueprint $table) {
+        Schema::create('decision_lists', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-            $table->string('name');
+            $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('status', ['active', 'closed', 'completed'])->default('active');
-            $table->timestamp('expires_at')->nullable();
+            $table->boolean('is_anonymous')->default(false);
             $table->timestamp('claimed_at')->nullable();
             $table->timestamps();
 
             // Indexes
-            $table->index('expires_at');
-            $table->index('status');
+            $table->index('claimed_at');
+            $table->index('is_anonymous');
         });
     }
 
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('lists');
+        Schema::dropIfExists('decision_lists');
     }
 }; 
