@@ -127,6 +127,42 @@ A Laravel-based application that helps users make decisions through a round-robi
 ### ShareCode
 - Belongs to DecisionList
 
+## Testing
+
+### Database Configuration
+- Uses SQLite in-memory database for testing
+- Configured in `config/database.php` as `sqlite_testing` connection
+- Test environment settings in `phpunit.xml`
+
+### Model Factories
+
+#### DecisionList Factory
+- Default: Creates a list with random title and description
+- States:
+  - `anonymous()`: Creates an anonymous list without user
+  - `claimed()`: Creates a list that has been claimed
+
+#### Item Factory
+- Default: Creates an item with random label and optional description
+- Automatically associates with a DecisionList
+
+#### Matchup Factory
+- Default: Creates a matchup between two items from the same list
+- States:
+  - `completed()`: Creates a matchup with a winner
+  - `pending()`: Creates a pending matchup
+
+#### Vote Factory
+- Default: Creates a vote for a matchup with user
+- States:
+  - `anonymous()`: Creates a vote with session token instead of user
+
+#### ShareCode Factory
+- Default: Creates a share code with optional expiration
+- States:
+  - `expired()`: Creates an expired share code
+  - `permanent()`: Creates a permanent share code
+
 ## Installation
 
 1. Clone the repository
@@ -156,6 +192,11 @@ A Laravel-based application that helps users make decisions through a round-robi
 - Added appropriate indexes and constraints
 - Set up foreign key relationships
 - Added additional fields for enhanced functionality
+
+### Epic 2 - Domain & Application Services (In Progress)
+- Implemented MatchupGenerator service
+- Added comprehensive test coverage with model factories
+- Set up testing environment with in-memory SQLite database
 
 ## Future Considerations
 

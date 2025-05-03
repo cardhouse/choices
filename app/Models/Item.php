@@ -31,4 +31,9 @@ class Item extends Model
     {
         return $this->hasMany(Matchup::class, 'item_b_id');
     }
-} 
+
+    public function votes(): HasMany
+    {
+        return $this->hasMany(Vote::class, 'selected_item_id');
+    }
+}

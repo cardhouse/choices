@@ -42,4 +42,4 @@ class Matchup extends Model
     {
         return $this->hasMany(Vote::class);
     }
-} 
+}

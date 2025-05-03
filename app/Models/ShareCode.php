@@ -24,4 +24,4 @@ class ShareCode extends Model
     {
         return $this->belongsTo(DecisionList::class, 'list_id');
     }
-} 
+}

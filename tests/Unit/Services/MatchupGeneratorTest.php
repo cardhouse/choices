@@ -42,4 +42,4 @@ class MatchupGeneratorTest extends TestCase
     // - Test that matchups are not created if the list is empty
     // - Test that matchups are not created if the list has invalid items
     // - Test performance with large lists (e.g., 100 items)
-} 
+}

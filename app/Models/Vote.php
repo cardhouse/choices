@@ -30,4 +30,4 @@ class Vote extends Model
     {
         return $this->belongsTo(Item::class, 'selected_item_id');
     }
-} 
+}

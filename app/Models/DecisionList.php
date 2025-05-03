@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DecisionList extends Model
 {
@@ -28,12 +28,12 @@ class DecisionList extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(Item::class);
+        return $this->hasMany(Item::class, 'list_id');
     }
 
     public function matchups(): HasMany
     {
-        return $this->hasMany(Matchup::class);
+        return $this->hasMany(Matchup::class, 'list_id');
     }
 
     public function user(): BelongsTo
@@ -43,6 +43,6 @@ class DecisionList extends Model
 
     public function shareCodes(): HasMany
     {
-        return $this->hasMany(ShareCode::class);
+        return $this->hasMany(ShareCode::class, 'list_id');
     }
-} 
+}
