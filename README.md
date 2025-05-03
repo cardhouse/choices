@@ -224,6 +224,17 @@ A Laravel-based application that helps users make decisions through a round-robi
     - Existing code deactivation
     - Custom alphabet validation
     - Error handling for generation failures
+- Implemented List Deletion and Claiming:
+  - Automatic deletion of unclaimed anonymous lists after 30 minutes
+  - Queued job system for handling delayed deletions
+  - List claiming functionality for registered users
+  - Transaction-based claiming process
+  - Comprehensive error handling and validation
+  - Full test coverage including:
+    - Deletion scheduling
+    - Job execution
+    - List claiming
+    - Error cases
 - Added comprehensive test coverage with model factories
 - Set up testing environment with in-memory SQLite database
 
