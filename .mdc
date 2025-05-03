@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Livewire and UI Component Specifications
+
+## Component Lifecycle Hooks and Events
+@file specifications/component_lifecycle_hooks_and_events.md
+@context Livewire component lifecycle hooks, event handling, and component communication patterns
+@tags livewire, lifecycle, events, components, php
+
+## File Uploads
+@file specifications/file_uploads.md
+@context Handling file uploads in Livewire with validation and previews
+@tags livewire, file-uploads, validation, previews
+
+## Form Handling and Input Validation
+@file specifications/form_handling_and_input_validation.md
+@context Form handling, validation, and real-time updates in Livewire
+@tags livewire, forms, validation, real-time
+
+## Livewire Component Setup
+@file specifications/livewire_component_setup.md
+@context Best practices for setting up Livewire components
+@tags livewire, components, setup, best-practices
+
+## Real-time Input Binding
+@file specifications/real_time_input_binding.md
+@context Implementing real-time input binding in Livewire
+@tags livewire, real-time, input-binding, performance
+
+## Tailwind UI Integration
+@file specifications/tailwind_ui_integration.md
+@context Integrating Tailwind UI components with Livewire
+@tags livewire, tailwind, ui-components, styling
+
+## Using Flux Pro Components Effectively
+@file specifications/using_flux_pro_components_effectively.md
+@context Using Flux UI components with Livewire
+@tags livewire, flux, ui-components, integration
+
+## Index and Overview
+@file specifications/index.md
+@context Overview of all available guides and their purposes
+@tags livewire, overview, guides, reference
