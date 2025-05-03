@@ -211,11 +211,19 @@ A Laravel-based application that helps users make decisions through a round-robi
   - Provides comprehensive error handling and logging
   - Includes full test coverage with various scenarios
 - Implemented ShareListService:
-  - Generates unique 8-character share codes
-  - Uses custom alphabet to avoid confusing characters
-  - Supports optional expiration dates
-  - Automatically deactivates existing codes
-  - Includes comprehensive test coverage
+  - Generates unique 8-character share codes using custom alphabet (excluding O/0, I/1)
+  - Implements retry mechanism with max attempts for unique code generation
+  - Uses database transactions to ensure data integrity
+  - Supports optional expiration dates with proper DateTime handling
+  - Automatically deactivates existing codes before generating new ones
+  - Includes comprehensive error handling with custom exceptions
+  - Full test coverage including:
+    - Basic code generation
+    - Code uniqueness verification
+    - Expiration date handling
+    - Existing code deactivation
+    - Custom alphabet validation
+    - Error handling for generation failures
 - Added comprehensive test coverage with model factories
 - Set up testing environment with in-memory SQLite database
 

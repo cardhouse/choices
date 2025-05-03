@@ -2,6 +2,7 @@
 
 namespace Tests\Services;
 
+use App\Exceptions\ShareCodeGenerationException;
 use App\Models\DecisionList;
 use App\Models\ShareCode;
 use App\Services\ShareListService;
@@ -22,25 +23,9 @@ class ShareListServiceTest extends TestCase
     }
 
     /**
-     * Test generating a share code without expiration
+     * Test that a new share code is generated successfully.
      */
-    public function test_generates_share_code_without_expiration(): void
-    {
-        $list = DecisionList::factory()->create();
-
-        $shareCode = $this->service->generateCode($list);
-
-        $this->assertInstanceOf(ShareCode::class, $shareCode);
-        $this->assertEquals($list->id, $shareCode->list_id);
-        $this->assertNull($shareCode->expires_at);
-        $this->assertNull($shareCode->deactivated_at);
-        $this->assertEquals(8, strlen($shareCode->code));
-    }
-
-    /**
-     * Test generating a share code with expiration
-     */
-    public function test_generates_share_code_with_expiration(): void
+    public function test_generates_new_share_code(): void
     {
         $list = DecisionList::factory()->create();
         $expiresAt = Carbon::now()->addDays(7)->setMicroseconds(0);
@@ -51,80 +36,89 @@ class ShareListServiceTest extends TestCase
         $this->assertEquals($list->id, $shareCode->list_id);
         $this->assertEquals($expiresAt->toDateTimeString(), $shareCode->expires_at->toDateTimeString());
         $this->assertNull($shareCode->deactivated_at);
+        $this->assertMatchesRegularExpression('/^[2-9A-HJ-NP-Z]{8}$/', $shareCode->code);
     }
 
     /**
-     * Test deactivating existing codes when generating a new one
+     * Test that existing active codes are deactivated when generating a new one.
      */
     public function test_deactivates_existing_codes(): void
     {
         $list = DecisionList::factory()->create();
-
-        // Create an active share code
         $existingCode = ShareCode::factory()->create([
             'list_id' => $list->id,
             'deactivated_at' => null,
         ]);
 
-        // Generate a new code
         $newCode = $this->service->generateCode($list);
 
-        // Refresh the existing code from database
-        $existingCode->refresh();
-
-        $this->assertNotNull($existingCode->deactivated_at);
-        $this->assertNull($newCode->deactivated_at);
+        $this->assertNotNull($existingCode->fresh()->deactivated_at);
+        $this->assertNotEquals($existingCode->code, $newCode->code);
     }
 
     /**
-     * Test generating unique codes
+     * Test that generated codes are unique.
      */
     public function test_generates_unique_codes(): void
     {
         $list = DecisionList::factory()->create();
+        $codes = [];
 
-        // Generate multiple codes
-        $codes = collect();
+        // Generate multiple codes and verify uniqueness
         for ($i = 0; $i < 5; $i++) {
-            $codes->push($this->service->generateCode($list));
+            $code = $this->service->generateCode($list);
+            $this->assertNotContains($code->code, $codes);
+            $codes[] = $code->code;
         }
-
-        // Verify all codes are unique
-        $uniqueCodes = $codes->pluck('code')->unique();
-        $this->assertEquals($codes->count(), $uniqueCodes->count());
     }
 
     /**
-     * Test code generation with custom alphabet
+     * Test that the service throws an exception when unable to generate a unique code.
      */
-    public function test_generates_codes_with_custom_alphabet(): void
+    public function test_throws_exception_when_unable_to_generate_unique_code(): void
+    {
+        $list = DecisionList::factory()->create();
+        
+        // Create a code that will cause a collision
+        ShareCode::factory()->create([
+            'code' => 'TESTCODE1',
+        ]);
+
+        // Create a mock that always returns the same code
+        $service = $this->getMockBuilder(ShareListService::class)
+            ->onlyMethods(['generateRandomCode'])
+            ->getMock();
+        
+        $service->expects($this->atLeast(5))
+            ->method('generateRandomCode')
+            ->willReturn('TESTCODE1');
+
+        $this->expectException(ShareCodeGenerationException::class);
+        $service->generateCode($list);
+    }
+
+    /**
+     * Test that a share code can be generated without an expiration date.
+     */
+    public function test_generates_code_without_expiration(): void
+    {
+        $list = DecisionList::factory()->create();
+
+        $shareCode = $this->service->generateCode($list);
+
+        $this->assertNull($shareCode->expires_at);
+    }
+
+    /**
+     * Test that the generated code uses the correct alphabet.
+     */
+    public function test_generated_code_uses_correct_alphabet(): void
     {
         $list = DecisionList::factory()->create();
         $shareCode = $this->service->generateCode($list);
 
-        // Verify code only contains allowed characters
-        $this->assertMatchesRegularExpression('/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]+$/', $shareCode->code);
-        $this->assertDoesNotMatchRegularExpression('/[O0I1]/', $shareCode->code);
-    }
-
-    /**
-     * Test handling of code generation failure
-     */
-    public function test_handles_code_generation_failure(): void
-    {
-        $list = DecisionList::factory()->create();
-
-        // Create a mock service that always fails to generate a code
-        $mockService = $this->partialMock(ShareListService::class, function ($mock) {
-            $mock->shouldReceive('generateCode')
-                ->once()
-                ->andThrow(new \RuntimeException('Failed to generate a unique code after 10 attempts'));
-        });
-
-        // Expect an exception when trying to generate a code
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Failed to generate a unique code after 10 attempts');
-
-        $mockService->generateCode($list);
+        // Verify the code only contains characters from our custom alphabet
+        $this->assertMatchesRegularExpression('/^[2-9A-HJ-NP-Z]{8}$/', $shareCode->code);
+        $this->assertDoesNotMatchRegularExpression('/[01OIl]/', $shareCode->code);
     }
 } 

@@ -6,7 +6,9 @@ use App\Models\DecisionList;
 use App\Models\ShareCode;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Exceptions\ShareCodeGenerationException;
 
 /**
  * Service class responsible for generating and managing share codes for decision lists.
@@ -19,95 +21,55 @@ use Illuminate\Support\Facades\Log;
 class ShareListService
 {
     /**
-     * Generate a unique share code for a decision list.
-     * 
-     * @param DecisionList $list The decision list to generate a code for
-     * @param \DateTime|null $expiresAt Optional expiration date for the code
-     * @return ShareCode The created share code
-     * 
-     * @throws \RuntimeException If unable to generate a unique code after multiple attempts
+     * Custom alphabet for share codes, excluding confusing characters (O/0, I/1)
+     * and using only uppercase letters for better readability.
      */
-    public function generateCode(DecisionList $list, ?\DateTime $expiresAt = null): ShareCode
+    private const CUSTOM_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+    /**
+     * Length of the generated share code.
+     */
+    private const CODE_LENGTH = 8;
+
+    /**
+     * Maximum number of attempts to generate a unique code before failing.
+     */
+    private const MAX_GENERATION_ATTEMPTS = 5;
+
+    /**
+     * Generates a unique share code for a decision list.
+     *
+     * This method creates a new share code for the given list with an optional expiration date.
+     * It uses a custom alphabet to avoid confusing characters and ensures uniqueness through
+     * multiple generation attempts if necessary.
+     *
+     * @param DecisionList $list The decision list to generate a share code for
+     * @param Carbon|null $expiresAt Optional expiration date for the share code
+     * @return ShareCode The newly created share code
+     * @throws ShareCodeGenerationException If unable to generate a unique code after multiple attempts
+     */
+    public function generateCode(DecisionList $list, ?Carbon $expiresAt = null): ShareCode
     {
-        try {
+        return DB::transaction(function () use ($list, $expiresAt) {
             // Deactivate any existing active codes for this list
             $this->deactivateExistingCodes($list);
 
-            // Generate a unique code
+            // Generate a new unique code
             $code = $this->generateUniqueCode();
 
-            // Create the share code
-            $shareCode = ShareCode::create([
-                'list_id' => $list->id,
-                'code' => $code,
-                'expires_at' => $expiresAt ? Carbon::instance($expiresAt)->setMicroseconds(0) : null,
-            ]);
-
-            Log::info('Share code generated', [
+            // Create and return the new share code
+            return ShareCode::create([
                 'list_id' => $list->id,
                 'code' => $code,
                 'expires_at' => $expiresAt,
             ]);
-
-            return $shareCode;
-        } catch (\Exception $e) {
-            Log::error('Failed to generate share code', [
-                'list_id' => $list->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            throw new \RuntimeException('Failed to generate share code: ' . $e->getMessage());
-        }
+        });
     }
 
     /**
-     * Generate a unique code that doesn't exist in the database.
-     * 
-     * @return string The generated code
-     * 
-     * @throws \RuntimeException If unable to generate a unique code after multiple attempts
-     */
-    private function generateUniqueCode(): string
-    {
-        $maxAttempts = 10;
-        $attempts = 0;
-
-        do {
-            if ($attempts >= $maxAttempts) {
-                throw new \RuntimeException('Failed to generate a unique code after ' . $maxAttempts . ' attempts');
-            }
-
-            // Generate an 8-character code using a custom alphabet
-            $code = $this->generateCodeFromAlphabet(8);
-            $attempts++;
-        } while (ShareCode::where('code', $code)->exists());
-
-        return $code;
-    }
-
-    /**
-     * Generate a code using a custom alphabet that excludes confusing characters.
-     * 
-     * @param int $length The length of the code to generate
-     * @return string The generated code
-     */
-    private function generateCodeFromAlphabet(int $length): string
-    {
-        // Custom alphabet excluding confusing characters (O/0, I/1)
-        $alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-        $code = '';
-
-        for ($i = 0; $i < $length; $i++) {
-            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-        }
-
-        return $code;
-    }
-
-    /**
-     * Deactivate any existing active codes for a list.
-     * 
-     * @param DecisionList $list The list to deactivate codes for
+     * Deactivates any existing active share codes for the given list.
+     *
+     * @param DecisionList $list The decision list to deactivate codes for
      * @return void
      */
     private function deactivateExistingCodes(DecisionList $list): void
@@ -115,5 +77,47 @@ class ShareListService
         ShareCode::where('list_id', $list->id)
             ->whereNull('deactivated_at')
             ->update(['deactivated_at' => now()]);
+    }
+
+    /**
+     * Generates a unique share code using the custom alphabet.
+     *
+     * @return string The generated code
+     * @throws ShareCodeGenerationException If unable to generate a unique code
+     */
+    private function generateUniqueCode(): string
+    {
+        $attempts = 0;
+
+        do {
+            $code = $this->generateRandomCode();
+            $attempts++;
+
+            if ($attempts > self::MAX_GENERATION_ATTEMPTS) {
+                Log::error('Failed to generate unique share code after multiple attempts');
+                throw new ShareCodeGenerationException(
+                    'Unable to generate a unique share code after ' . self::MAX_GENERATION_ATTEMPTS . ' attempts'
+                );
+            }
+        } while (ShareCode::where('code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Generates a random code using the custom alphabet.
+     *
+     * @return string The generated code
+     */
+    protected function generateRandomCode(): string
+    {
+        $code = '';
+        $alphabetLength = strlen(self::CUSTOM_ALPHABET);
+
+        for ($i = 0; $i < self::CODE_LENGTH; $i++) {
+            $code .= self::CUSTOM_ALPHABET[random_int(0, $alphabetLength - 1)];
+        }
+
+        return $code;
     }
 } 
