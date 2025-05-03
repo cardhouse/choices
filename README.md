@@ -97,6 +97,9 @@ A Laravel-based application that helps users make decisions through a round-robi
 - **Frontend**: Blade/Livewire with Tailwind CSS
 - **Database**: MySQL
 - **Queues**: Laravel Queues for delayed deletions
+- **Services**:
+  - `MatchupGenerator`: Creates round-robin matchups for lists
+  - `ScoreCalculator`: Calculates and ranks items based on matchup results
 
 ## Model Relationships
 
@@ -195,6 +198,11 @@ A Laravel-based application that helps users make decisions through a round-robi
 
 ### Epic 2 - Domain & Application Services (In Progress)
 - Implemented MatchupGenerator service
+- Implemented ScoreCalculator service:
+  - Calculates item rankings based on matchup wins
+  - Handles tiebreakers using alphabetical ordering
+  - Provides comprehensive error handling and logging
+  - Includes full test coverage with various scenarios
 - Added comprehensive test coverage with model factories
 - Set up testing environment with in-memory SQLite database
 
