@@ -58,4 +58,18 @@ class ListPolicy
         // 2. List is not already claimed
         return $list->is_anonymous && $list->claimed_at === null;
     }
+
+    /**
+     * Determine whether the user can view the list results.
+     */
+    public function viewResults(User $user, DecisionList $list): bool
+    {
+        // Allow viewing results if:
+        // 1. User owns the list
+        // 2. List is anonymous and voting is complete
+        // 3. List has an active share code and voting is complete
+        return $user->id === $list->user_id
+            || ($list->is_anonymous && $list->voting_completed_at !== null)
+            || ($list->shareCodes()->active()->exists() && $list->voting_completed_at !== null);
+    }
 }

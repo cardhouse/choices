@@ -13,37 +13,31 @@ class MatchupFactory extends Factory
 
     public function definition(): array
     {
-        $list = DecisionList::factory()->create();
-        $itemA = DecisionListItem::factory()->create(['list_id' => $list->id]);
-        $itemB = DecisionListItem::factory()->create(['list_id' => $list->id]);
-
         return [
-            'list_id' => $list->id,
-            'item_a_id' => $itemA->id,
-            'item_b_id' => $itemB->id,
-            'winner_item_id' => null,
-            'status' => $this->faker->randomElement(['pending', 'completed', 'skipped']),
-            'round_number' => $this->faker->numberBetween(1, 10),
+            'list_id' => DecisionList::factory(),
+            'item_a_id' => DecisionListItem::factory(),
+            'item_b_id' => DecisionListItem::factory(),
+            'status' => 'pending',
+            'round_number' => 1,
         ];
     }
 
-    public function completed(): static
+    public function completed(): self
     {
         return $this->state(function (array $attributes) {
-            $winner = $this->faker->randomElement([$attributes['item_a_id'], $attributes['item_b_id']]);
-
             return [
                 'status' => 'completed',
-                'winner_item_id' => $winner,
+                'winner_item_id' => $this->faker->randomElement([$attributes['item_a_id'], $attributes['item_b_id']]),
             ];
         });
     }
 
-    public function pending(): static
+    public function skipped(): self
     {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'pending',
-            'winner_item_id' => null,
-        ]);
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => 'skipped',
+            ];
+        });
     }
 }

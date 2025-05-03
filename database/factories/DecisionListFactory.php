@@ -16,17 +16,18 @@ class DecisionListFactory extends Factory
             'user_id' => User::factory(),
             'title' => $this->faker->sentence(),
             'description' => $this->faker->paragraph(),
-            'is_anonymous' => $this->faker->boolean(),
-            'claimed_at' => $this->faker->optional()->dateTime(),
+            'is_anonymous' => false,
         ];
     }
 
-    public function anonymous(): static
+    public function anonymous(): self
     {
-        return $this->state(fn (array $attributes) => [
-            'user_id' => null,
-            'is_anonymous' => true,
-        ]);
+        return $this->state(function (array $attributes) {
+            return [
+                'user_id' => null,
+                'is_anonymous' => true,
+            ];
+        });
     }
 
     public function claimed(): static

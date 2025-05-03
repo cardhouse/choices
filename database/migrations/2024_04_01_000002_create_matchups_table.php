@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('matchups', function (Blueprint $table) {
             $table->id();
             $table->foreignId('list_id')->constrained('decision_lists')->onDelete('cascade');
-            $table->foreignId('item_a_id')->constrained('items')->onDelete('cascade');
-            $table->foreignId('item_b_id')->constrained('items')->onDelete('cascade');
-            $table->foreignId('winner_item_id')->nullable()->constrained('items')->onDelete('set null');
+            $table->foreignId('item_a_id')->constrained('decision_list_items')->onDelete('cascade');
+            $table->foreignId('item_b_id')->constrained('decision_list_items')->onDelete('cascade');
+            $table->foreignId('winner_item_id')->nullable()->constrained('decision_list_items')->onDelete('set null');
             $table->enum('status', ['pending', 'completed', 'skipped'])->default('pending');
             $table->integer('round_number')->default(1);
             $table->timestamps();

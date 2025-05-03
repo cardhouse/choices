@@ -25,17 +25,17 @@ class Matchup extends Model
 
     public function itemA(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'item_a_id');
+        return $this->belongsTo(DecisionListItem::class, 'item_a_id');
     }
 
     public function itemB(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'item_b_id');
+        return $this->belongsTo(DecisionListItem::class, 'item_b_id');
     }
 
     public function winner(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'winner_item_id');
+        return $this->belongsTo(DecisionListItem::class, 'winner_item_id');
     }
 
     public function votes(): HasMany

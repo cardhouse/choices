@@ -159,4 +159,69 @@ class ListPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->claim($this->user, $this->list));
     }
+
+    public function test_owner_can_view_results()
+    {
+        $user = User::factory()->create();
+        $list = DecisionList::factory()->create([
+            'user_id' => $user->id,
+            'voting_completed_at' => now(),
+        ]);
+
+        $this->assertTrue($this->policy->viewResults($user, $list));
+    }
+
+    public function test_anonymous_list_can_view_results_after_voting_complete()
+    {
+        $user = User::factory()->create();
+        $list = DecisionList::factory()->create([
+            'user_id' => null,
+            'is_anonymous' => true,
+            'voting_completed_at' => now(),
+        ]);
+
+        $this->assertTrue($this->policy->viewResults($user, $list));
+    }
+
+    public function test_anonymous_list_cannot_view_results_before_voting_complete()
+    {
+        $user = User::factory()->create();
+        $list = DecisionList::factory()->create([
+            'user_id' => null,
+            'is_anonymous' => true,
+            'voting_completed_at' => null,
+        ]);
+
+        $this->assertFalse($this->policy->viewResults($user, $list));
+    }
+
+    public function test_shared_list_can_view_results_after_voting_complete()
+    {
+        $user = User::factory()->create();
+        $list = DecisionList::factory()->create([
+            'voting_completed_at' => now(),
+        ]);
+
+        ShareCode::factory()->create([
+            'list_id' => $list->id,
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $this->assertTrue($this->policy->viewResults($user, $list));
+    }
+
+    public function test_shared_list_cannot_view_results_before_voting_complete()
+    {
+        $user = User::factory()->create();
+        $list = DecisionList::factory()->create([
+            'voting_completed_at' => null,
+        ]);
+
+        ShareCode::factory()->create([
+            'list_id' => $list->id,
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $this->assertFalse($this->policy->viewResults($user, $list));
+    }
 }

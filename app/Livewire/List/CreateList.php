@@ -3,7 +3,7 @@
 namespace App\Livewire\List;
 
 use App\Models\DecisionList;
-use App\Models\DecisionListItem;
+use App\Services\MatchupGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.app')]
 class CreateList extends Component
 {
     /**
@@ -22,7 +22,7 @@ class CreateList extends Component
     /**
      * The list description.
      */
-    public ?string $description = null;
+    public string $description = '';
 
     /**
      * The list items.
@@ -67,10 +67,17 @@ class CreateList extends Component
     ];
 
     /**
-     * Mount the component.
+     * Mount the component and initialize with example if provided
      */
     public function mount(): void
     {
+        if ($example = session('example_list')) {
+            $this->title = $example['title'];
+            $this->description = $example['description'];
+            $this->items = $example['items'];
+            session()->forget('example_list');
+        }
+
         // If user is not authenticated, force anonymous mode
         if (! Auth::check()) {
             $this->isAnonymous = true;
@@ -121,14 +128,14 @@ class CreateList extends Component
                         continue;
                     }
 
-                    DecisionListItem::create([
-                        'list_id' => $list->id,
-                        'label' => trim($item),
-                    ]);
+                    $list->items()->create(['label' => trim($item)]);
                 }
 
                 return $list;
             });
+
+            // Generate matchups
+            MatchupGenerator::forList($list);
 
             // Redirect to the list page
             $this->redirect(route('lists.show', ['list' => $list->id]));

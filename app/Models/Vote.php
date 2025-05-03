@@ -31,6 +31,6 @@ class Vote extends Model
 
     public function chosenItem(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'chosen_item_id');
+        return $this->belongsTo(DecisionListItem::class, 'chosen_item_id');
     }
 }

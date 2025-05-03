@@ -6,7 +6,7 @@ use App\Models\DecisionList;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.app')]
 class ShowList extends Component
 {
     /**
@@ -22,6 +22,14 @@ class ShowList extends Component
     public function mount(DecisionList $list): void
     {
         $this->list = $list;
+    }
+
+    /**
+     * Start voting on this list.
+     */
+    public function startVoting()
+    {
+        return redirect()->route('lists.vote', ['list' => $this->list]);
     }
 
     /**

@@ -15,7 +15,6 @@ class DecisionListItemFactory extends Factory
         return [
             'list_id' => DecisionList::factory(),
             'label' => $this->faker->word(),
-            'description' => $this->faker->optional()->sentence(),
         ];
     }
 }

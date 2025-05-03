@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use App\Models\User;
 use App\Models\Vote;
@@ -19,18 +20,20 @@ class VoteFactory extends Factory
         return [
             'matchup_id' => $matchup->id,
             'user_id' => User::factory(),
-            'session_token' => $this->faker->optional()->uuid(),
             'chosen_item_id' => $chosenItem,
-            'ip_address' => $this->faker->optional()->ipv4(),
-            'user_agent' => $this->faker->optional()->userAgent(),
+            'session_token' => null,
+            'ip_address' => $this->faker->ipv4(),
+            'user_agent' => $this->faker->userAgent(),
         ];
     }
 
-    public function anonymous(): static
+    public function anonymous(): self
     {
-        return $this->state(fn (array $attributes) => [
-            'user_id' => null,
-            'session_token' => $this->faker->uuid(),
-        ]);
+        return $this->state(function (array $attributes) {
+            return [
+                'user_id' => null,
+                'session_token' => $this->faker->uuid(),
+            ];
+        });
     }
 }

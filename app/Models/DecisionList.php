@@ -20,11 +20,13 @@ class DecisionList extends Model
         'description',
         'claimed_at',
         'is_anonymous',
+        'voting_completed_at',
     ];
 
     protected $casts = [
         'claimed_at' => 'datetime',
         'is_anonymous' => 'boolean',
+        'voting_completed_at' => 'datetime',
     ];
 
     protected $attributes = [

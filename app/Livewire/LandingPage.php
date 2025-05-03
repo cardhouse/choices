@@ -5,12 +5,36 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\Attributes\Layout;
 
+/**
+ * Landing page component that introduces the application and provides entry points
+ * for creating decision lists and exploring features.
+ */
+#[Layout('layouts.app')]
 class LandingPage extends Component
 {
-    public function getStarted()
+    /**
+     * Start creating a new list immediately
+     */
+    public function createList()
     {
-        // Redirect to registration or onboarding
-        return redirect()->route('register');
+        return redirect()->route('lists.create');
+    }
+
+    /**
+     * View example lists to understand how the app works
+     */
+    public function viewExamples()
+    {
+        return redirect()->route('lists.examples');
+    }
+
+    /**
+     * Render the landing page view
+     */
+    public function render()
+    {
+        return view('livewire.landing-page');
     }
 }
