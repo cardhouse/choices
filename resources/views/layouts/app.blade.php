@@ -16,18 +16,45 @@
     @livewireStyles
 </head>
 <body class="bg-gray-50 font-sans antialiased">
-    <!-- Navbar -->
+    <!--
+        =====================================
+        Choices Navigation Bar
+        =====================================
+        - Improved spacing between logo and links
+        - Conditional rendering of Dashboard/Home links
+        - Guest users see only Login/Register
+        - Mobile menu with user actions
+        =====================================
+    -->
     <nav class="bg-white shadow-sm border-b border-gray-200" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="text-blue-600 font-bold text-xl">Choices</a>
-                    <div class="hidden sm:flex sm:space-x-8 ml-10">
-                        <a href="{{ route('home') }}" class="text-gray-600 hover:text-blue-600">Home</a>
-                    </div>
-                </div>
-                <div class="hidden sm:flex items-center space-x-4">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo and Main Links -->
+                <div class="flex items-center gap-8">
+                    <a href="{{ route('home') }}" class="text-blue-600 font-bold text-xl whitespace-nowrap">Choices</a>
                     @auth
+                        <!-- Authenticated: Show Dashboard link only -->
+                        <div class="hidden sm:flex gap-6">
+                            <a href="{{ route('dashboard') }}" class="text-gray-600 hover:text-blue-600">Dashboard</a>
+                        </div>
+                    @else
+                        <!-- Guest: Show Home link only -->
+                        <div class="hidden sm:flex gap-6">
+                            <a href="{{ route('home') }}" class="text-gray-600 hover:text-blue-600">Home</a>
+                        </div>
+                    @endauth
+                </div>
+
+                <!-- Desktop User Menu or Auth Links -->
+                <div class="hidden sm:flex items-center gap-4">
+                    @auth
+                        <!--
+                            =====================================
+                            User Dropdown (Desktop)
+                            =====================================
+                            - Shows user name, dashboard, settings, logout
+                            =====================================
+                        -->
                         <div class="relative" x-data="{ dropdownOpen: false }">
                             <button @click="dropdownOpen = !dropdownOpen" class="flex items-center text-gray-600 hover:text-gray-800">
                                 <span>{{ Auth::user()->name }}</span>
@@ -45,12 +72,49 @@
                             </div>
                         </div>
                     @else
+                        <!-- Guest: Only show Login/Register -->
                         <a href="{{ route('login') }}" class="text-sm text-gray-700 hover:text-gray-900">Log in</a>
                         @if (Route::has('register'))
                             <a href="{{ route('register') }}" class="text-sm text-gray-700 hover:text-gray-900">Register</a>
                         @endif
                     @endauth
                 </div>
+
+                <!-- Mobile Hamburger Button -->
+                <div class="flex sm:hidden items-center">
+                    <button @click="open = !open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100">
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path :class="{'hidden': open, 'inline-flex': !open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path :class="{'hidden': !open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!--
+            =====================================
+            Mobile Menu
+            =====================================
+            - Collapses into vertical menu
+            - Shows correct links for auth/guest
+            - User can log out from mobile
+            =====================================
+        -->
+        <div class="sm:hidden" x-show="open" @click.away="open = false">
+            <div class="pt-2 pb-3 space-y-1">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Dashboard</a>
+                    <a href="{{ route('settings.profile') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Settings</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full text-left px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Log Out</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Log in</a>
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Register</a>
+                    @endif
+                @endauth
             </div>
         </div>
     </nav>

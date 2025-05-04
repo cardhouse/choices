@@ -187,3 +187,27 @@ resources/
    - Route-based splitting
    - Component-based splitting
    - Dynamic imports 
+
+## Mobile Responsiveness
+
+All major user-facing views in Choices are now fully mobile responsive, following Tailwind CSS best practices:
+
+- **Responsive paddings and text sizes**: All layouts, tables, forms, and buttons use responsive classes (e.g., `px-2 sm:px-6`, `text-base sm:text-lg`) to ensure readability and usability on all devices.
+- **Tables and grids**: All tables are wrapped in `overflow-x-auto` and use responsive paddings. Grids and flex layouts stack vertically on mobile (`grid-cols-1`, `flex-col`) and scale up for larger screens.
+- **Buttons and actions**: Primary actions and buttons are full-width on mobile (`w-full`) and stack vertically where appropriate for easy tapping.
+- **Forms**: All form fields and submit buttons are full-width on mobile for accessibility and ease of use.
+- **Docblocks and inline comments**: All view files are documented with docblocks and inline comments to explain structure, rationale, and any trade-offs.
+
+### Rationale
+- The mobile-first approach ensures a seamless experience for users on any device.
+- Touch-friendly targets and readable text sizes improve accessibility and usability.
+- All changes are maintainable and easy to extend, thanks to clear documentation and Tailwind's utility-first design.
+
+### Affected Views
+- Dashboard
+- All List views (create, show, vote, results, matrix, examples, registration prompt)
+- Landing page
+- Settings (profile, password, appearance)
+- Welcome page
+
+For more details, see the docblocks and inline comments in each Blade view file. 

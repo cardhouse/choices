@@ -1,12 +1,20 @@
-<section class="w-full">
+{{--
+    =====================================
+    Settings Profile View (Mobile Responsive)
+    =====================================
+    - Responsive paddings and text sizes
+    - Form and buttons are full-width on mobile
+    =====================================
+--}}
+<section class="w-full p-4 sm:p-0">
     @include('partials.settings-heading')
 
     <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" class="w-full" />
 
             <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" class="w-full" />
 
                 @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&! auth()->user()->hasVerifiedEmail())
                     <div>
@@ -27,8 +35,8 @@
                 @endif
             </div>
 
-            <div class="flex items-center gap-4">
-                <div class="flex items-center justify-end">
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+                <div class="flex items-center justify-end w-full sm:w-auto">
                     <flux:button variant="primary" type="submit" class="w-full">{{ __('Save') }}</flux:button>
                 </div>
 

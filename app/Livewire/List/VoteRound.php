@@ -164,7 +164,7 @@ class VoteRound extends Component
                 session()->put('anonymous_list_id', $this->list->id);
                 session()->put('intended_url', route('lists.results', ['list' => $this->list]));
                 session()->flash('message', 'Please register or login to view your voting results. Your votes have been saved and will be available after registration.');
-                $this->redirect(route('login'));
+                $this->redirect(route('lists.prompt', ['list' => $this->list]));
             }
         }
     }

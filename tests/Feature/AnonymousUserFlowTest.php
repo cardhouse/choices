@@ -75,6 +75,14 @@ class AnonymousUserFlowTest extends TestCase
             session('message')
         );
 
+        // Verify we're redirected to the registration prompt page
+        $this->get(route('lists.prompt', ['list' => $list]))
+            ->assertOk()
+            ->assertSee('View Your Results')
+            ->assertSee('Please register or login to view your voting results')
+            ->assertSee('Create Account')
+            ->assertSee('Log in');
+
         // Step 5: Register a new user
         $component = Livewire::test(Register::class)
             ->set('name', 'Test User')
@@ -172,6 +180,14 @@ class AnonymousUserFlowTest extends TestCase
             'Please register or login to view your voting results. Your votes have been saved and will be available after registration.',
             session('message')
         );
+
+        // Verify we're redirected to the registration prompt page
+        $this->get(route('lists.prompt', ['list' => $list]))
+            ->assertOk()
+            ->assertSee('View Your Results')
+            ->assertSee('Please register or login to view your voting results')
+            ->assertSee('Create Account')
+            ->assertSee('Log in');
 
         // Step 5: Login with existing user
         $component = Livewire::test(Login::class)
