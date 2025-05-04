@@ -1,10 +1,12 @@
 {{--
     =====================================
-    Dashboard View (Mobile Responsive)
+    Dashboard View (Mobile Responsive + Collapsible Actions)
     =====================================
     - Responsive paddings and text sizes
     - Table and stats readable on mobile
     - Action buttons stack vertically on mobile
+    - Less important columns hidden on mobile
+    - Collapsible actions menu for mobile
     =====================================
 --}}
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 px-2 sm:px-6 lg:px-8">
@@ -69,9 +71,9 @@
                     <thead class="text-gray-500 uppercase tracking-wider bg-gray-50">
                         <tr>
                             <th class="px-2 sm:px-6 py-3">Title</th>
-                            <th class="px-2 sm:px-6 py-3">Created</th>
+                            <th class="px-2 sm:px-6 py-3 hidden sm:table-cell">Created</th>
                             <th class="px-2 sm:px-6 py-3">Status</th>
-                            <th class="px-2 sm:px-6 py-3 text-center">Items</th>
+                            <th class="px-2 sm:px-6 py-3 text-center hidden sm:table-cell">Items</th>
                             <th class="px-2 sm:px-6 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -79,7 +81,7 @@
                         @forelse($lists as $list)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-2 sm:px-6 py-4 text-gray-800">{{ $list->title }}</td>
-                                <td class="px-2 sm:px-6 py-4 text-gray-500">{{ $list->created_at->format('M d, Y') }}</td>
+                                <td class="px-2 sm:px-6 py-4 text-gray-500 hidden sm:table-cell">{{ $list->created_at->format('M d, Y') }}</td>
                                 <td class="px-2 sm:px-6 py-4">
                                     @if($list->status === 'completed')
                                         <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">Completed</span>
@@ -91,15 +93,38 @@
                                         <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold">Other</span>
                                     @endif
                                 </td>
-                                <td class="px-2 sm:px-6 py-4 text-center">{{ $list->items_count }}</td>
-                                <td class="px-2 sm:px-6 py-4 text-center flex flex-col sm:flex-row gap-2 justify-center">
-                                    <a href="{{ route('lists.show', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200">View</a>
-                                    @if($list->status === 'pending')
-                                        <a href="{{ route('lists.vote', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-green-100 text-green-700 rounded hover:bg-green-200">Vote</a>
-                                    @endif
-                                    @if($list->status === 'completed')
-                                        <a href="{{ route('lists.results', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">Results</a>
-                                    @endif
+                                <td class="px-2 sm:px-6 py-4 text-center hidden sm:table-cell">{{ $list->items_count }}</td>
+                                <!-- Actions: Collapsible on mobile, full on desktop -->
+                                <td class="px-2 sm:px-6 py-4 text-center">
+                                    <!-- Desktop: Show all action buttons -->
+                                    <div class="hidden sm:flex flex-row gap-2 justify-center">
+                                        <a href="{{ route('lists.show', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200">View</a>
+                                        @if($list->status === 'pending')
+                                            <a href="{{ route('lists.vote', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-green-100 text-green-700 rounded hover:bg-green-200">Vote</a>
+                                        @endif
+                                        @if($list->status === 'completed')
+                                            <a href="{{ route('lists.results', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">Results</a>
+                                        @endif
+                                    </div>
+                                    <!-- Mobile: Collapsible actions menu -->
+                                    <div class="sm:hidden flex justify-center">
+                                        <div x-data="{ open: false }" class="relative">
+                                            <button @click="open = !open" class="px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v.01M12 12v.01M12 18v.01" />
+                                                </svg>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg z-20">
+                                                <a href="{{ route('lists.show', ['list' => $list]) }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">View</a>
+                                                @if($list->status === 'pending')
+                                                    <a href="{{ route('lists.vote', ['list' => $list]) }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">Vote</a>
+                                                @endif
+                                                @if($list->status === 'completed')
+                                                    <a href="{{ route('lists.results', ['list' => $list]) }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">Results</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

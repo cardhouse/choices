@@ -198,6 +198,12 @@ All major user-facing views in Choices are now fully mobile responsive, followin
 - **Forms**: All form fields and submit buttons are full-width on mobile for accessibility and ease of use.
 - **Docblocks and inline comments**: All view files are documented with docblocks and inline comments to explain structure, rationale, and any trade-offs.
 
+### Dashboard Table: Mobile-First Enhancements
+
+- **Column Hiding**: To maximize space and clarity on small screens, less critical columns (such as "Created" and "Items") are hidden on mobile and only shown on larger screens. This ensures the most important information (title and status) remains visible and readable.
+- **Collapsible Actions Menu**: On mobile, the actions for each list (View, Vote, Results) are grouped into a collapsible dropdown menu, accessible via a single button. This prevents action buttons from crowding the table and provides a clean, touch-friendly interface. On desktop, all actions remain visible as separate buttons for quick access.
+- **Rationale**: This approach balances information density and usability, ensuring users can easily interact with their lists regardless of device size. The collapsible menu is implemented using Alpine.js for smooth, accessible toggling.
+
 ### Rationale
 - The mobile-first approach ensures a seamless experience for users on any device.
 - Touch-friendly targets and readable text sizes improve accessibility and usability.
