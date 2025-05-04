@@ -12,7 +12,7 @@ This document describes the authentication system used in the Choices applicatio
    - System stores anonymous list ID in session
    - System stores message explaining registration requirement
    - Redirects to login page
-4. During registration:
+4. During registration or login:
    - System automatically claims the list for the user:
      - List's user_id is set to the authenticated user
      - List is marked as no longer anonymous
@@ -39,7 +39,11 @@ This document describes the authentication system used in the Choices applicatio
   - Password
 - Remember me functionality available
 - After login:
+  - Any anonymous lists are claimed
   - User is redirected to their intended destination
+- Rate limiting:
+  - 5 attempts per minute
+  - Lockout duration increases with failed attempts
 
 ### Logout
 1. User clicks logout
