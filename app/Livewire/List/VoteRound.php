@@ -151,6 +151,11 @@ class VoteRound extends Component
             $this->loadNextMatchup();
         } else {
             // All matchups are completed
+            // Update the list's voting_completed_at timestamp
+            $this->list->update([
+                'voting_completed_at' => now()
+            ]);
+
             if (Auth::check()) {
                 // Authenticated users go straight to results
                 $this->redirect(route('lists.results', ['list' => $this->list]));

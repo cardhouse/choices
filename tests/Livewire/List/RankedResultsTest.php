@@ -60,6 +60,8 @@ class RankedResultsTest extends TestCase
         ]);
         
         Livewire::test(RankedResults::class, ['list' => $list])
+            ->assertSee('Results')
+            ->assertSee('See how your items performed in head-to-head voting')
             ->assertSee($item1->label)
             ->assertSee($item2->label)
             ->assertSee($item3->label)

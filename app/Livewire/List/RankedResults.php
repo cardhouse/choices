@@ -4,8 +4,10 @@ namespace App\Livewire\List;
 
 use App\Models\DecisionList;
 use App\Services\ScoreCalculator;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class RankedResults extends Component
 {
     public DecisionList $list;
