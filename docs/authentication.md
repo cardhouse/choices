@@ -4,18 +4,42 @@ This document describes the authentication system used in the Choices applicatio
 
 ## Authentication Flow
 
+### Anonymous User Flow
+1. User creates a list anonymously or starts voting on a shared list
+2. System tracks votes using session token
+3. Upon completing votes:
+   - System stores intended URL (results page)
+   - System stores anonymous list ID in session
+   - System stores message explaining registration requirement
+   - Redirects to login page
+4. During registration:
+   - System automatically claims the list for the user:
+     - List's user_id is set to the authenticated user
+     - List is marked as no longer anonymous
+     - List's claimed_at timestamp is set
+     - Anonymous votes are associated with the user
+   - System automatically redirects to intended URL
+   - User can view their voting results
+   - List appears in user's dashboard
+
 ### Registration
-1. User submits registration form
-2. System validates input
-3. Creates new user account
-4. Sends verification email
-5. Redirects to login page
+- Users can register with:
+  - Name
+  - Email
+  - Password
+- Email verification is optional
+- After registration:
+  - User is automatically logged in
+  - Any anonymous lists are claimed
+  - User is redirected to their intended destination
 
 ### Login
-1. User submits login form
-2. System validates credentials
-3. Creates session
-4. Redirects to dashboard
+- Users can log in with:
+  - Email
+  - Password
+- Remember me functionality available
+- After login:
+  - User is redirected to their intended destination
 
 ### Logout
 1. User clicks logout
@@ -23,12 +47,10 @@ This document describes the authentication system used in the Choices applicatio
 3. Redirects to login page
 
 ### Password Reset
-1. User requests password reset
-2. System sends reset link
-3. User clicks link
-4. User submits new password
-5. System updates password
-6. Redirects to login page
+- Users can request password reset
+- Reset links expire after 60 minutes
+- Rate limiting on reset requests
+- Secure token generation and validation
 
 ## Security Features
 
@@ -46,11 +68,17 @@ This document describes the authentication system used in the Choices applicatio
 - Session timeout: 2 hours
 - Remember me functionality
 - Session regeneration on login
+- Anonymous user session tracking:
+  - Vote persistence using session tokens
+  - Intended URL storage for post-registration redirect
+  - Anonymous list ID storage for claiming
+  - Flash messages for registration prompts
+  - Session data preserved during authentication
 
 ### CSRF Protection
-- CSRF tokens on all forms
-- VerifyCsrfToken middleware
-- XSRF-TOKEN cookie
+- CSRF token required for all forms
+- Token validation on all POST/PUT/DELETE requests
+- Token regeneration on authentication
 
 ### Rate Limiting
 - Login attempts: 5 per minute
@@ -107,6 +135,7 @@ Located in `app/Http/Controllers/Auth/`
 - `auth`: Ensures user is authenticated
 - `guest`: Ensures user is not authenticated
 - `verified`: Ensures email is verified
+- `claim-anonymous-list`: Automatically claims anonymous lists after authentication
 
 ### Authorization Middleware
 - `can:view,list`: Check list view permission
@@ -172,4 +201,10 @@ Located in `app/Http/Controllers/Auth/`
 - CSRF protection tests
 - Rate limiting tests
 - Session security tests
-- API authentication tests 
+- API authentication tests
+
+### Account Management
+- Users can update profile information
+- Password changes require current password
+- Account deletion with confirmation
+- Data export functionality 

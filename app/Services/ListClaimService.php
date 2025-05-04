@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\DeleteUnclaimedList;
 use App\Models\DecisionList;
 use App\Models\User;
+use App\Models\Vote;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -59,6 +60,7 @@ class ListClaimService
      * 1. Associates the list with the user
      * 2. Marks the list as claimed
      * 3. Removes the anonymous flag
+     * 4. Associates any anonymous votes with the user
      *
      * All operations are performed in a transaction to ensure data consistency.
      *
@@ -79,14 +81,22 @@ class ListClaimService
         }
 
         return DB::transaction(function () use ($list, $user) {
+            // Update the list
             $list->user_id = $user->id;
             $list->is_anonymous = false;
             $list->claimed_at = now();
             $list->save();
 
+            // Associate anonymous votes with the user
+            Vote::whereIn('matchup_id', $list->matchups()->pluck('id'))
+                ->whereNull('user_id')
+                ->where('session_token', session()->getId())
+                ->update(['user_id' => $user->id]);
+
             Log::info('List claimed by user', [
                 'list_id' => $list->id,
                 'user_id' => $user->id,
+                'session_token' => session()->getId(),
             ]);
 
             return $list;

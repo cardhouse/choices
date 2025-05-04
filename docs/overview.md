@@ -10,12 +10,15 @@ Choices is a web application designed to help users make decisions through a pai
    - Create and manage lists of items
    - Add descriptions and metadata
    - Organize items for comparison
+   - Support for anonymous list creation
 
 2. **Pairwise Voting**
    - Automatic matchup generation
    - Side-by-side comparison
    - Progress tracking
    - Results calculation
+   - Anonymous voting with session persistence
+   - Seamless registration flow for viewing results
 
 3. **Sharing**
    - Generate shareable links
@@ -26,6 +29,7 @@ Choices is a web application designed to help users make decisions through a pai
    - Registration and authentication
    - Profile management
    - Activity history
+   - Anonymous to authenticated user conversion
 
 ## Technical Architecture
 

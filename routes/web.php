@@ -34,5 +34,7 @@ Route::get('/lists/create', CreateList::class)->name('lists.create');
 Route::get('/lists/examples', ShowExamples::class)->name('lists.examples');
 Route::get('/lists/{list}/vote', VoteRound::class)->name('lists.vote');
 Route::get('/lists/{list}', ShowList::class)->name('lists.show');
+Route::get('lists/{list}/prompt', \App\Livewire\List\RegistrationPrompt::class)
+    ->name('lists.prompt');
 
 require __DIR__.'/auth.php';
