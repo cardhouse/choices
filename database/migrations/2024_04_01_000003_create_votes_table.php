@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('matchup_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->string('session_token')->nullable();
-            $table->foreignId('chosen_item_id')->constrained('decision_list_items')->onDelete('cascade');
+            $table->foreignId('chosen_item_id')->constrained('items')->onDelete('cascade');
             $table->string('ip_address')->nullable();
             $table->string('user_agent')->nullable();
             $table->timestamps();
