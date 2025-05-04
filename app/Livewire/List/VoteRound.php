@@ -150,8 +150,15 @@ class VoteRound extends Component
         if ($this->completedMatchups < $this->totalMatchups) {
             $this->loadNextMatchup();
         } else {
-            // All matchups are completed, redirect to results page
-            $this->redirect(route('lists.results', ['list' => $this->list]));
+            // All matchups are completed
+            if (Auth::check()) {
+                // Authenticated users go straight to results
+                $this->redirect(route('lists.results', ['list' => $this->list]));
+            } else {
+                // Anonymous users need to register to see results
+                session()->put('intended_url', route('lists.results', ['list' => $this->list]));
+                $this->redirect(route('register'));
+            }
         }
     }
 

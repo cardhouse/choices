@@ -23,7 +23,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
-    Route::get('/lists/{list}/vote', VoteRound::class)->name('lists.vote');
+    Route::get('/lists/{list}/results', RankedResults::class)->name('lists.results');
 });
 
 Route::get('/timer', function () {
@@ -32,8 +32,7 @@ Route::get('/timer', function () {
 
 Route::get('/lists/create', CreateList::class)->name('lists.create');
 Route::get('/lists/examples', ShowExamples::class)->name('lists.examples');
-
-Route::get('/lists/{list}/results', RankedResults::class)->name('lists.results');
+Route::get('/lists/{list}/vote', VoteRound::class)->name('lists.vote');
 Route::get('/lists/{list}', ShowList::class)->name('lists.show');
 
 require __DIR__.'/auth.php';
