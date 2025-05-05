@@ -8,7 +8,7 @@
     </x-pulse::card-header>
 
     <div class="p-4">
-        <div class="text-4xl font-bold text-gray-900">{{ number_format($totalDecisions) }}</div>
-        <div class="mt-1 text-sm text-gray-500">Total completed decisions across all lists</div>
+        <div class="text-4xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($totalDecisions) }}</div>
+        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">Total completed decisions across all lists</div>
     </div>
 </x-pulse::card> 
