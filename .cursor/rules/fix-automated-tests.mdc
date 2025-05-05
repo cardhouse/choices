@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Run `vendor/bin/pest` automated tests and analyze the output, contemplate the solution, and try to implement the fix for the tests.

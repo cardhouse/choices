@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use App\Services\ListClaimService;
 
 #[Layout('layouts.app')]
 class CreateList extends Component
@@ -91,12 +90,6 @@ class CreateList extends Component
     public function createList(): void
     {
         try {
-            Log::info('Starting list creation process', [
-                'is_anonymous' => $this->isAnonymous,
-                'user_id' => Auth::id(),
-                'item_count' => count($this->items),
-            ]);
-
             // Validate all fields
             $validator = Validator::make([
                 'title' => $this->title,
@@ -114,31 +107,19 @@ class CreateList extends Component
             });
 
             if ($validator->fails()) {
-                Log::warning('List creation validation failed', [
-                    'errors' => $validator->errors()->toArray(),
-                ]);
                 $this->setErrorBag($validator->errors());
+
                 return;
             }
 
             // Create the list in a transaction
             $list = DB::transaction(function () {
-                Log::info('Starting transaction to create list', [
-                    'title' => $this->title,
-                    'is_anonymous' => $this->isAnonymous,
-                ]);
-
                 // Create the list
                 $list = DecisionList::create([
                     'title' => $this->title,
                     'description' => $this->description,
                     'user_id' => $this->isAnonymous ? null : Auth::id(),
                     'is_anonymous' => $this->isAnonymous,
-                ]);
-
-                Log::info('List created successfully', [
-                    'list_id' => $list->id,
-                    'is_anonymous' => $list->is_anonymous,
                 ]);
 
                 // Create the items
@@ -150,37 +131,16 @@ class CreateList extends Component
                     $list->items()->create(['label' => trim($item)]);
                 }
 
-                Log::info('List items created', [
-                    'list_id' => $list->id,
-                    'item_count' => $list->items()->count(),
-                ]);
-
                 return $list;
             });
 
             // Generate matchups
-            Log::info('Generating matchups for list', [
-                'list_id' => $list->id,
-            ]);
             MatchupGenerator::forList($list);
-
-            // If list is anonymous, schedule it for deletion
-            if ($list->is_anonymous) {
-                Log::info('Scheduling anonymous list for deletion', [
-                    'list_id' => $list->id,
-                ]);
-                app(ListClaimService::class)->scheduleForDeletion($list);
-            }
 
             // Redirect to the list page
             $this->redirect(route('lists.show', ['list' => $list->id]));
         } catch (\Exception $e) {
-            Log::error('Failed to create list', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'title' => $this->title,
-                'is_anonymous' => $this->isAnonymous,
-            ]);
+            Log::error('Failed to create list: '.$e->getMessage());
             $this->addError('title', 'Failed to create list. Please try again.');
         }
     }

@@ -24,5 +24,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewPulse', function (User $user) {
             return $user->email === 'cardhousemagic@gmail.com';
         });
+
+        if (app()->isLocal()) {
+            \Illuminate\Database\Eloquent\Model::preventLazyLoading();
+        }
     }
 }

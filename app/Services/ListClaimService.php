@@ -35,45 +35,22 @@ class ListClaimService
      */
     public function scheduleForDeletion(DecisionList $list): void
     {
-        Log::info('Starting scheduleForDeletion process', [
-            'list_id' => $list->id,
-            'is_anonymous' => $list->is_anonymous,
-            'claimed_at' => $list->claimed_at,
-            'queue_connection' => config('queue.default'),
-            'queue_driver' => config('queue.connections.' . config('queue.default') . '.driver'),
-        ]);
-
         if (! $list->is_anonymous) {
             Log::warning('Attempted to schedule non-anonymous list for deletion', [
                 'list_id' => $list->id,
             ]);
+
             return;
         }
 
-        try {
-            Log::info('Preparing to dispatch DeleteUnclaimedList job', [
-                'list_id' => $list->id,
-                'scheduled_deletion_time' => Carbon::now()->addMinutes(self::DELETION_DELAY_MINUTES),
-                'queue' => 'deletions',
-            ]);
+        DeleteUnclaimedList::dispatch($list)
+            ->delay(Carbon::now()->addMinutes(self::DELETION_DELAY_MINUTES))
+            ->onQueue('deletions');
 
-            $job = DeleteUnclaimedList::dispatch($list)
-                ->delay(Carbon::now()->addMinutes(self::DELETION_DELAY_MINUTES))
-                ->onQueue('deletions');
-
-            Log::info('DeleteUnclaimedList job dispatched successfully', [
-                'list_id' => $list->id,
-                'job_dispatched' => $job !== null,
-                'queue' => 'deletions',
-                'scheduled_time' => Carbon::now()->addMinutes(self::DELETION_DELAY_MINUTES),
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Failed to dispatch DeleteUnclaimedList job', [
-                'list_id' => $list->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-        }
+        Log::info('Scheduled list for deletion', [
+            'list_id' => $list->id,
+            'scheduled_deletion' => Carbon::now()->addMinutes(self::DELETION_DELAY_MINUTES),
+        ]);
     }
 
     /**
@@ -95,68 +72,31 @@ class ListClaimService
      */
     public function claimList(DecisionList $list, User $user): DecisionList
     {
-        Log::info('Starting claimList process', [
-            'list_id' => $list->id,
-            'user_id' => $user->id,
-            'is_anonymous' => $list->is_anonymous,
-            'claimed_at' => $list->claimed_at,
-        ]);
-
         if (! $list->is_anonymous) {
-            Log::error('Attempted to claim non-anonymous list', [
-                'list_id' => $list->id,
-                'user_id' => $user->id,
-            ]);
             throw new \RuntimeException('Cannot claim a non-anonymous list');
         }
 
         if ($list->claimed_at !== null) {
-            Log::error('Attempted to claim already claimed list', [
-                'list_id' => $list->id,
-                'user_id' => $user->id,
-                'existing_claimed_at' => $list->claimed_at,
-            ]);
             throw new \RuntimeException('List is already claimed');
         }
 
         return DB::transaction(function () use ($list, $user) {
-            Log::info('Starting transaction to claim list', [
-                'list_id' => $list->id,
-                'user_id' => $user->id,
-            ]);
-
             // Update the list
             $list->user_id = $user->id;
             $list->is_anonymous = false;
             $list->claimed_at = now();
             $list->save();
 
-            Log::info('List updated with user ownership', [
-                'list_id' => $list->id,
-                'user_id' => $user->id,
-                'claimed_at' => $list->claimed_at,
-            ]);
-
             // Associate anonymous votes with the user
-            $matchupIds = $list->matchups()->pluck('id');
-            $sessionToken = session()->getId();
-            
-            Log::info('Associating anonymous votes with user', [
-                'list_id' => $list->id,
-                'user_id' => $user->id,
-                'matchup_count' => $matchupIds->count(),
-                'session_token' => $sessionToken,
-            ]);
-
-            Vote::whereIn('matchup_id', $matchupIds)
+            Vote::whereIn('matchup_id', $list->matchups()->pluck('id'))
                 ->whereNull('user_id')
-                ->where('session_token', $sessionToken)
+                ->where('session_token', session()->getId())
                 ->update(['user_id' => $user->id]);
 
-            Log::info('List successfully claimed by user', [
+            Log::info('List claimed by user', [
                 'list_id' => $list->id,
                 'user_id' => $user->id,
-                'session_token' => $sessionToken,
+                'session_token' => session()->getId(),
             ]);
 
             return $list;
