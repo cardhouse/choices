@@ -3,6 +3,10 @@
 
     <livewire:pulse.usage cols="4" rows="2" />
 
+    <livewire:pulse.total-votes-card cols="4" />
+
+    <livewire:pulse.total-decisions-card cols="4" />
+
     <livewire:pulse.queues cols="4" />
 
     <livewire:pulse.cache cols="4" />
