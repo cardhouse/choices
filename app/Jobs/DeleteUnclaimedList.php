@@ -44,23 +44,50 @@ class DeleteUnclaimedList implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::info('DeleteUnclaimedList job started processing', [
+            'list_id' => $this->list->id,
+            'is_anonymous' => $this->list->is_anonymous,
+            'claimed_at' => $this->list->claimed_at,
+            'job_id' => $this->job->getJobId(),
+            'queue' => $this->job->getQueue(),
+        ]);
+
         // If the list has been claimed, don't delete it
         if ($this->list->claimed_at !== null) {
             Log::info('Skipping deletion of claimed list', [
                 'list_id' => $this->list->id,
                 'claimed_at' => $this->list->claimed_at,
+                'job_id' => $this->job->getJobId(),
             ]);
 
             return;
         }
 
-        // Delete the list and log the action
-        $this->list->delete();
+        try {
+            Log::info('Proceeding with list deletion', [
+                'list_id' => $this->list->id,
+                'created_at' => $this->list->created_at,
+                'job_id' => $this->job->getJobId(),
+            ]);
 
-        Log::info('Deleted unclaimed list', [
-            'list_id' => $this->list->id,
-            'created_at' => $this->list->created_at,
-        ]);
+            // Delete the list and log the action
+            $this->list->delete();
+
+            Log::info('Successfully deleted unclaimed list', [
+                'list_id' => $this->list->id,
+                'created_at' => $this->list->created_at,
+                'job_id' => $this->job->getJobId(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to delete unclaimed list', [
+                'list_id' => $this->list->id,
+                'job_id' => $this->job->getJobId(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**
