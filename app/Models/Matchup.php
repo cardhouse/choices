@@ -15,8 +15,7 @@ class Matchup extends Model
         'list_id',
         'item_a_id',
         'item_b_id',
-        'winner_item_id',
-        'status',
+        'round_number',
     ];
 
     public function list(): BelongsTo
@@ -34,13 +33,16 @@ class Matchup extends Model
         return $this->belongsTo(DecisionListItem::class, 'item_b_id');
     }
 
-    public function winner(): BelongsTo
-    {
-        return $this->belongsTo(DecisionListItem::class, 'winner_item_id');
-    }
-
     public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
+    }
+
+    /**
+     * Whether the given item is one of the two items in this matchup.
+     */
+    public function involves(int $itemId): bool
+    {
+        return $itemId === $this->item_a_id || $itemId === $this->item_b_id;
     }
 }

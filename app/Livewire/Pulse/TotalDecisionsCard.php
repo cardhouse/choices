@@ -17,4 +17,4 @@ class TotalDecisionsCard extends Card
             'totalDecisions' => $totalDecisions,
         ]);
     }
-} 
+}

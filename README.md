@@ -47,7 +47,19 @@ A Laravel-based application that helps users make decisions through a round-robi
   - `description` (nullable text)
   - `is_anonymous` (boolean, default: false)
   - `claimed_at` (nullable timestamp)
+  - `voting_closes_at` (nullable timestamp — optional deadline set when sharing)
+  - `voting_closed_at` (nullable timestamp — set when the owner closes voting)
   - `timestamps`
+
+### List Participants Table
+- Tracks users who joined a shared list by redeeming a share code
+- Fields:
+  - `id` (primary key)
+  - `list_id` (foreign key to decision_lists)
+  - `user_id` (foreign key to users)
+  - `share_code_id` (nullable foreign key to share_codes)
+  - `timestamps`
+- Unique index on (`list_id`, `user_id`)
 
 ### Items Table
 - Stores entries associated with each list
@@ -60,14 +72,13 @@ A Laravel-based application that helps users make decisions through a round-robi
   - `timestamps`
 
 ### Matchups Table
-- Stores round-robin pairings between items
+- Stores round-robin pairings between items. Votes are the source of truth
+  for outcomes; matchups carry no winner or status of their own.
 - Fields:
   - `id` (primary key)
   - `list_id` (foreign key to decision_lists)
   - `item_a_id` (foreign key to decision_list_items)
   - `item_b_id` (foreign key to decision_list_items)
-  - `winner_item_id` (nullable foreign key to decision_list_items)
-  - `status` (enum: pending, completed, skipped)
   - `round_number` (integer)
   - `timestamps`
 
@@ -100,12 +111,27 @@ A Laravel-based application that helps users make decisions through a round-robi
 
 - **Framework**: Laravel 12
 - **Frontend**: Blade/Livewire with Tailwind CSS
-- **Database**: MySQL
-- **Queues**: Laravel Queues for delayed deletions
-- **Services**:
-  - `MatchupGenerator`: Creates round-robin matchups for lists
-  - `ScoreCalculator`: Calculates and ranks items based on matchup results
-  - `ShareListService`: Generates and manages unique share codes for lists
+- **Database**: SQLite (dev) / MySQL
+- **Queues**: Laravel Queues (database driver) for delayed deletions
+
+### Architecture: Actions
+
+All mutations live in single-purpose Action classes under `app/Actions`.
+Livewire components validate input (reusing the FormRequest rule definitions
+in `app/Http/Requests`), check policies, call an action, and handle the UI
+response. Actions enforce domain invariants and own the transaction.
+
+- `Actions\Lists`: `CreateList`, `DeleteList`, `GenerateMatchups`,
+  `ClaimAnonymousList`, `ScheduleListDeletion`
+- `Actions\Voting`: `CastVote`, `CloseVoting`
+- `Actions\Sharing`: `GenerateShareCode`, `RedeemShareCode`, `RevokeShareCode`
+
+Read-side queries stay in `app/Services`:
+
+- `ScoreCalculator`: ranks items by total victories (votes across all
+  voters), with spec tiebreakers — two-way ties fall back to the tied items'
+  head-to-head result, anything still tied is ordered by a deterministic
+  random draw and flagged as such in the results.
 
 ## Model Relationships
 
@@ -196,57 +222,47 @@ A Laravel-based application that helps users make decisions through a round-robi
    php artisan serve
    ```
 
+## How Sharing Works
+
+1. The owner opens their list and generates a share code (optionally with a
+   voting deadline of 1 day / 3 days / 1 week).
+2. Friends log in and enter the code at `/join` — or follow the invite link
+   (`/join/{CODE}`) — which makes them a participant and drops them straight
+   into voting.
+3. Every participant votes through all head-to-head matchups at their own
+   pace; votes can be changed until voting closes.
+4. The owner closes voting manually (or the deadline passes). Share codes
+   deactivate, and results unlock for all participants. The owner can peek at
+   live standings any time; participants wait for the close.
+5. The winner is the item with the most total victories across all voters.
+
+Lists that are never shared close themselves when their single voter
+finishes, so the solo flow ends at results immediately.
+
 ## Development Status
 
-### Epic 1 - Data Modeling & Migrations (Completed)
-- Implemented all required database tables
-- Added appropriate indexes and constraints
-- Set up foreign key relationships
-- Added additional fields for enhanced functionality
-- Renamed `items` table to `decision_list_items` for better clarity
-- Updated all model relationships and references
+Feature-complete against the original spec:
 
-### Epic 2 - Domain & Application Services (Completed)
-- Implemented MatchupGenerator service
-- Implemented ScoreCalculator service:
-  - Calculates item rankings based on matchup wins
-  - Handles tiebreakers using alphabetical ordering
-  - Provides comprehensive error handling and logging
-  - Includes full test coverage with various scenarios
-- Implemented ShareListService:
-  - Generates unique 8-character share codes using custom alphabet (excluding O/0, I/1)
-  - Implements retry mechanism with max attempts for unique code generation
-  - Uses database transactions to ensure data integrity
-  - Supports optional expiration dates with proper DateTime handling
-  - Automatically deactivates existing codes before generating new ones
-  - Includes comprehensive error handling with custom exceptions
-  - Full test coverage including:
-    - Basic code generation
-    - Code uniqueness verification
-    - Expiration date handling
-    - Existing code deactivation
-    - Custom alphabet validation
-    - Error handling for generation failures
-- Implemented List Deletion and Claiming:
-  - Automatic deletion of unclaimed anonymous lists after 30 minutes
-  - Queued job system for handling delayed deletions
-  - List claiming functionality for registered users
-  - Transaction-based claiming process
-  - Comprehensive error handling and validation
-  - Full test coverage including:
-    - Deletion scheduling
-    - Job execution
-    - List claiming
-    - Error cases
-- Enhanced Validation and Testing:
-  - Implemented custom InMatchup validation rule for vote requests
-  - Fixed test cases in DecisionListItemPolicyTest and ListPolicyTest
-  - Improved test coverage for anonymous list viewing
-  - Added proper validation for chosen items in matchups
-  - Implemented DataAwareRule for contextual validation
-  - All 104 tests passing with complete coverage
-- Added comprehensive test coverage with model factories
-- Set up testing environment with in-memory SQLite database
+- **Data model** — lists, items, matchups, votes, share codes, participants;
+  per-voter voting with votes as the single source of truth.
+- **Action layer** — all mutations as Action classes with unit tests;
+  FormRequests own validation rules and are reused by the Livewire components.
+- **Voting** — randomized round-robin per voter with progress tracking; votes
+  persist per user (or per session for anonymous lists) and can be changed
+  until close.
+- **Sharing** — share codes + invite links, optional voting deadline, manual
+  close, revocation, participant tracking, join page at `/join`.
+- **Results** — victory totals across all voters, spec tiebreakers
+  (head-to-head, then labeled random), owner-only analytics (voter count and
+  head-to-head matrix). Results are gated until voting closes; owners can
+  always peek.
+- **Anonymous flow** — guest lists are scheduled for deletion after 30
+  minutes and claimed automatically (with their votes) when the guest
+  registers or logs in.
+- **Authorization** — `ListPolicy` enforced in every list-facing component.
+
+Run the test suite with `vendor/bin/pest` (requires `npm run build` first so
+the Vite manifest exists).
 
 ## Future Considerations
 

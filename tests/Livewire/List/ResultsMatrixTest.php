@@ -15,33 +15,22 @@ class ResultsMatrixTest extends TestCase
 {
     public function test_displays_matrix_with_results()
     {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'user_id' => $user->id,
-            'voting_completed_at' => now(),
-        ]);
-        
-        $item1 = DecisionListItem::factory()->create(['list_id' => $list->id]);
-        $item2 = DecisionListItem::factory()->create(['list_id' => $list->id]);
-        $item3 = DecisionListItem::factory()->create(['list_id' => $list->id]);
-        
+        $list = DecisionList::factory()->create();
+
+        [$item1, $item2, $item3] = DecisionListItem::factory()->count(3)->create(['list_id' => $list->id]);
+
         $matchup = Matchup::factory()->create([
             'list_id' => $list->id,
             'item_a_id' => $item1->id,
             'item_b_id' => $item2->id,
-            'winner_item_id' => $item1->id,
-            'status' => 'completed',
         ]);
-        
-        Vote::factory()->create([
+
+        Vote::create([
             'matchup_id' => $matchup->id,
-            'user_id' => $user->id,
+            'user_id' => $list->user_id,
             'chosen_item_id' => $item1->id,
-            'session_token' => null,
-            'ip_address' => '127.0.0.1',
-            'user_agent' => 'test',
         ]);
-        
+
         Livewire::test(ResultsMatrix::class, ['list' => $list])
             ->assertSee($item1->label)
             ->assertSee($item2->label)
@@ -51,36 +40,24 @@ class ResultsMatrixTest extends TestCase
             ->assertSee('-');
     }
 
-    public function test_displays_vote_counts_when_enabled()
+    public function test_displays_vote_counts_and_ties_when_enabled()
     {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'user_id' => $user->id,
-            'voting_completed_at' => now(),
-        ]);
-        
-        $item1 = DecisionListItem::factory()->create(['list_id' => $list->id]);
-        $item2 = DecisionListItem::factory()->create(['list_id' => $list->id]);
-        
+        $list = DecisionList::factory()->create();
+
+        [$item1, $item2] = DecisionListItem::factory()->count(2)->create(['list_id' => $list->id]);
+
         $matchup = Matchup::factory()->create([
             'list_id' => $list->id,
             'item_a_id' => $item1->id,
             'item_b_id' => $item2->id,
-            'winner_item_id' => $item1->id,
-            'status' => 'completed',
         ]);
-        
-        Vote::factory()->create([
-            'matchup_id' => $matchup->id,
-            'user_id' => $user->id,
-            'chosen_item_id' => $item1->id,
-            'session_token' => null,
-            'ip_address' => '127.0.0.1',
-            'user_agent' => 'test',
-        ]);
-        
+
+        // Two voters split the matchup: a tie with counts shown.
+        [$alice, $bob] = User::factory()->count(2)->create();
+        Vote::create(['matchup_id' => $matchup->id, 'user_id' => $alice->id, 'chosen_item_id' => $item1->id]);
+        Vote::create(['matchup_id' => $matchup->id, 'user_id' => $bob->id, 'chosen_item_id' => $item2->id]);
+
         Livewire::test(ResultsMatrix::class, ['list' => $list, 'showVoteCounts' => true])
-            ->assertSee('✅ (1)')
-            ->assertSee('❌ (1)');
+            ->assertSee('= (1–1)');
     }
-} 
+}

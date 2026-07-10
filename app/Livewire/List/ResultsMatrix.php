@@ -3,13 +3,18 @@
 namespace App\Livewire\List;
 
 use App\Models\DecisionList;
-use App\Models\Matchup;
 use Livewire\Component;
 
+/**
+ * Owner analytics: full head-to-head grid where each cell shows how a row
+ * item fared against a column item across all voters.
+ */
 class ResultsMatrix extends Component
 {
     public DecisionList $list;
+
     public array $matrix = [];
+
     public bool $showVoteCounts = false;
 
     public function mount(DecisionList $list, bool $showVoteCounts = false)
@@ -24,37 +29,41 @@ class ResultsMatrix extends Component
         $items = $this->list->items()->orderBy('id')->get();
         $matchups = $this->list->matchups()->with('votes')->get();
 
-        // Initialize matrix with empty values
         foreach ($items as $rowItem) {
             foreach ($items as $colItem) {
-                if ($rowItem->id === $colItem->id) {
-                    $this->matrix[$rowItem->id][$colItem->id] = '-';
-                } else {
-                    $this->matrix[$rowItem->id][$colItem->id] = null;
-                }
+                $this->matrix[$rowItem->id][$colItem->id] = $rowItem->id === $colItem->id ? '-' : null;
             }
         }
 
-        // Fill in the matrix with results
         foreach ($matchups as $matchup) {
-            $winnerId = $matchup->winner_item_id;
-            $itemAId = $matchup->item_a_id;
-            $itemBId = $matchup->item_b_id;
-            $voteCount = $matchup->votes->count();
+            $votesForA = $matchup->votes->where('chosen_item_id', $matchup->item_a_id)->count();
+            $votesForB = $matchup->votes->where('chosen_item_id', $matchup->item_b_id)->count();
 
-            if ($winnerId) {
-                $loserId = $winnerId === $itemAId ? $itemBId : $itemAId;
-                $this->matrix[$winnerId][$loserId] = $this->showVoteCounts ? "✅ ($voteCount)" : "✅";
-                $this->matrix[$loserId][$winnerId] = $this->showVoteCounts ? "❌ ($voteCount)" : "❌";
-            } elseif ($matchup->status === 'completed') {
-                $this->matrix[$itemAId][$itemBId] = $this->showVoteCounts ? "= ($voteCount)" : "=";
-                $this->matrix[$itemBId][$itemAId] = $this->showVoteCounts ? "= ($voteCount)" : "=";
+            if ($votesForA === 0 && $votesForB === 0) {
+                continue;
             }
+
+            $this->matrix[$matchup->item_a_id][$matchup->item_b_id] = $this->cell($votesForA, $votesForB);
+            $this->matrix[$matchup->item_b_id][$matchup->item_a_id] = $this->cell($votesForB, $votesForA);
         }
+    }
+
+    /**
+     * Render one cell from the row item's perspective.
+     */
+    protected function cell(int $ownVotes, int $opponentVotes): string
+    {
+        $symbol = match (true) {
+            $ownVotes > $opponentVotes => '✅',
+            $ownVotes < $opponentVotes => '❌',
+            default => '=',
+        };
+
+        return $this->showVoteCounts ? "{$symbol} ({$ownVotes}–{$opponentVotes})" : $symbol;
     }
 
     public function render()
     {
         return view('livewire.list.results-matrix');
     }
-} 
+}

@@ -2,8 +2,8 @@
 
 namespace App\Livewire\List;
 
-use Livewire\Component;
 use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 /**
  * Component for displaying example decision lists to help users understand the application.
@@ -39,6 +39,7 @@ class ShowExamples extends Component
     {
         // Store the selected example in the session and redirect to create
         session(['example_list' => $this->exampleLists[$index]]);
+
         return redirect()->route('lists.create');
     }
 
@@ -57,4 +58,4 @@ class ShowExamples extends Component
     {
         return view('livewire.list.show-examples');
     }
-} 
+}

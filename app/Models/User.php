@@ -48,6 +48,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Lists this user owns.
+     */
+    public function lists(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DecisionList::class);
+    }
+
+    /**
+     * Lists this user joined via a share code.
+     */
+    public function participatingLists(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(DecisionList::class, 'list_participants', 'user_id', 'list_id')
+            ->withTimestamps();
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

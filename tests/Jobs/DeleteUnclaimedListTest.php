@@ -2,6 +2,7 @@
 
 namespace Tests\Jobs;
 
+use App\Actions\Lists\DeleteList;
 use App\Jobs\DeleteUnclaimedList;
 use App\Models\DecisionList;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,8 +22,7 @@ class DeleteUnclaimedListTest extends TestCase
             'claimed_at' => null,
         ]);
 
-        $job = new DeleteUnclaimedList($list);
-        $job->handle();
+        (new DeleteUnclaimedList($list))->handle(new DeleteList);
 
         $this->assertDatabaseMissing('decision_lists', [
             'id' => $list->id,
@@ -39,8 +39,7 @@ class DeleteUnclaimedListTest extends TestCase
             'claimed_at' => now(),
         ]);
 
-        $job = new DeleteUnclaimedList($list);
-        $job->handle();
+        (new DeleteUnclaimedList($list))->handle(new DeleteList);
 
         $this->assertDatabaseHas('decision_lists', [
             'id' => $list->id,

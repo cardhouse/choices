@@ -2,13 +2,15 @@
 
 namespace Tests\Livewire\List;
 
+use App\Jobs\DeleteUnclaimedList;
 use App\Livewire\List\CreateList;
 use App\Models\DecisionList;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
-use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
 
 class CreateListTest extends TestCase
 {
@@ -47,92 +49,36 @@ class CreateListTest extends TestCase
         ]);
 
         $list = DecisionList::first();
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 1',
-        ]);
 
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 2',
-        ]);
+        foreach (['Item 1', 'Item 2', 'Item 3'] as $label) {
+            $this->assertDatabaseHas('decision_list_items', [
+                'list_id' => $list->id,
+                'label' => $label,
+            ]);
+        }
 
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 3',
-        ]);
+        // Round-robin matchups are generated at creation
+        $this->assertEquals(3, $list->matchups()->count());
     }
 
     #[Test]
-    public function unauthenticated_user_can_create_anonymous_list()
+    public function unauthenticated_user_creates_anonymous_list_scheduled_for_deletion()
     {
+        Queue::fake();
+
         Livewire::test(CreateList::class)
             ->set('title', 'Test List')
-            ->set('description', 'Test Description')
-            ->set('items', ['Item 1', 'Item 2', 'Item 3'])
+            ->set('items', ['Item 1', 'Item 2'])
             ->call('createList')
             ->assertRedirect(route('lists.show', ['list' => DecisionList::first()->id]));
 
         $this->assertDatabaseHas('decision_lists', [
             'title' => 'Test List',
-            'description' => 'Test Description',
             'user_id' => null,
             'is_anonymous' => true,
         ]);
 
-        $list = DecisionList::first();
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 1',
-        ]);
-
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 2',
-        ]);
-
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 3',
-        ]);
-    }
-
-    #[Test]
-    public function authenticated_user_can_create_anonymous_list()
-    {
-        $user = User::factory()->create();
-
-        Livewire::actingAs($user)
-            ->test(CreateList::class)
-            ->set('title', 'Test List')
-            ->set('description', 'Test Description')
-            ->set('items', ['Item 1', 'Item 2', 'Item 3'])
-            ->set('isAnonymous', true)
-            ->call('createList')
-            ->assertRedirect(route('lists.show', ['list' => DecisionList::first()->id]));
-
-        $this->assertDatabaseHas('decision_lists', [
-            'title' => 'Test List',
-            'description' => 'Test Description',
-            'user_id' => null,
-            'is_anonymous' => true,
-        ]);
-
-        $list = DecisionList::first();
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 1',
-        ]);
-
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 2',
-        ]);
-
-        $this->assertDatabaseHas('decision_list_items', [
-            'list_id' => $list->id,
-            'label' => 'Item 3',
-        ]);
+        Queue::assertPushed(DeleteUnclaimedList::class);
     }
 
     #[Test]
@@ -140,9 +86,9 @@ class CreateListTest extends TestCase
     {
         Livewire::test(CreateList::class)
             ->set('title', '')
-            ->set('items', [''])
+            ->set('items', ['', ''])
             ->call('createList')
-            ->assertHasErrors(['title', 'items', 'items.0']);
+            ->assertHasErrors(['title', 'items']);
     }
 
     #[Test]
@@ -171,15 +117,23 @@ class CreateListTest extends TestCase
     {
         Livewire::test(CreateList::class)
             ->set('title', 'Test List')
-            ->set('items', [''])
+            ->set('items', [str_repeat('a', 256), 'ok'])
             ->call('createList')
             ->assertHasErrors(['items.0']);
+    }
 
-        Livewire::test(CreateList::class)
+    #[Test]
+    public function blank_items_are_ignored()
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(CreateList::class)
             ->set('title', 'Test List')
-            ->set('items', [str_repeat('a', 256)])
-            ->call('createList')
-            ->assertHasErrors(['items.0']);
+            ->set('items', ['Item 1', '', 'Item 2', '  '])
+            ->call('createList');
+
+        $this->assertEquals(2, DecisionList::first()->items()->count());
     }
 
     #[Test]

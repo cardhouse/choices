@@ -20,4 +20,4 @@ class RegistrationPrompt extends Component
     {
         return view('livewire.list.registration-prompt');
     }
-} 
+}

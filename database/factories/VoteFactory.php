@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use App\Models\User;
 use App\Models\Vote;

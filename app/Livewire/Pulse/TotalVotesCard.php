@@ -17,4 +17,4 @@ class TotalVotesCard extends Card
             'totalVotes' => $totalVotes,
         ]);
     }
-} 
+}

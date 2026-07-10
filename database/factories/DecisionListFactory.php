@@ -36,4 +36,11 @@ class DecisionListFactory extends Factory
             'claimed_at' => $this->faker->dateTime(),
         ]);
     }
+
+    public function closed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'voting_closed_at' => now(),
+        ]);
+    }
 }

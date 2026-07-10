@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\Voter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,5 +34,13 @@ class Vote extends Model
     public function chosenItem(): BelongsTo
     {
         return $this->belongsTo(DecisionListItem::class, 'chosen_item_id');
+    }
+
+    /**
+     * Scope votes to a specific voter (user or anonymous session).
+     */
+    public function scopeByVoter(Builder $query, Voter $voter): Builder
+    {
+        return $voter->scopeVotes($query);
     }
 }

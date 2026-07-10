@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Lists\CreateList;
+use App\Livewire\List\JoinList;
+use App\Livewire\List\RankedResults;
+use App\Livewire\List\ShareList;
 use App\Livewire\List\VoteRound;
-use App\Models\DecisionList;
-use App\Models\DecisionListItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -14,258 +16,163 @@ class VotingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_complete_voting_flow(): void
+    /**
+     * Vote item_a on every remaining matchup for the given component.
+     */
+    private function voteThroughAll($component): void
     {
-        // Create a test user
+        while ($component->get('currentMatchup') !== null) {
+            $component->call('vote', $component->get('currentMatchup.item_a_id'));
+        }
+    }
+
+    public function test_solo_voting_flow_ends_at_results(): void
+    {
         $user = User::factory()->create();
-        
-        // Create a test list with items
-        $list = DecisionList::factory()->create([
-            'user_id' => $user->id,
+
+        $list = app(CreateList::class)->handle([
             'title' => 'Test Voting List',
-        ]);
-        
-        // Add items to the list
-        $items = [
-            'Item 1',
-            'Item 2',
-            'Item 3',
-        ];
-        
-        $createdItems = [];
-        foreach ($items as $item) {
-            $createdItems[] = DecisionListItem::create([
-                'list_id' => $list->id,
-                'label' => $item,
-            ]);
-        }
+            'items' => ['Item 1', 'Item 2', 'Item 3'],
+        ], $user);
 
-        // Create all possible matchups
-        for ($i = 0; $i < count($createdItems); $i++) {
-            for ($j = $i + 1; $j < count($createdItems); $j++) {
-                \App\Models\Matchup::create([
-                    'list_id' => $list->id,
-                    'item_a_id' => $createdItems[$i]->id,
-                    'item_b_id' => $createdItems[$j]->id,
-                    'status' => 'pending',
-                ]);
-            }
-        }
-
-        // Calculate expected number of matchups (n(n-1)/2)
-        $expectedMatchups = (count($items) * (count($items) - 1)) / 2;
-        
-        // Initialize the VoteRound component
         $component = Livewire::actingAs($user)
             ->test(VoteRound::class, ['list' => $list]);
-        
-        // Vote on all matchups
-        for ($i = 1; $i <= $expectedMatchups; $i++) {
-            // Get the current matchup from the component
-            $currentMatchupId = $component->get('currentMatchup.id');
-            $currentMatchup = \App\Models\Matchup::find($currentMatchupId);
-            
-            $this->assertNotNull($currentMatchup, "Failed to get current matchup from component for round {$i}");
-            $this->assertEquals('pending', $currentMatchup->status, "Expected matchup to be pending for round {$i}");
-            
-            // Vote for the left item (item_a)
-            $component->call('vote', $currentMatchup->item_a_id)
-                ->assertOk();
-        }
 
-        // Test the results view
-        $component = Livewire::test(\App\Livewire\List\RankedResults::class, ['list' => $list])
+        $this->voteThroughAll($component);
+
+        // Solo list closes itself when its only voter finishes
+        $this->assertTrue($list->fresh()->isVotingClosed());
+        $component->assertRedirect(route('lists.results', ['list' => $list]));
+
+        $results = Livewire::actingAs($user)
+            ->test(RankedResults::class, ['list' => $list->fresh()])
             ->assertSee('Rank')
-            ->assertSee('Item')
-            ->assertSee('Wins');
-        
-        // Verify each item is present
-        foreach ($items as $item) {
-            $component->assertSee($item);
+            ->assertSee('Victories')
+            ->assertSee('Winner');
+
+        foreach (['Item 1', 'Item 2', 'Item 3'] as $label) {
+            $results->assertSee($label);
         }
     }
-    
-    public function test_anonymous_voting_flow(): void
+
+    public function test_shared_voting_flow_with_two_voters(): void
     {
-        // Create a test list with items
-        $list = DecisionList::factory()->create([
-            'title' => 'Anonymous Test List',
-        ]);
-        
-        // Add items to the list
-        $items = [
-            'Item A',
-            'Item B',
-            'Item C',
-        ];
-        
-        $createdItems = [];
-        foreach ($items as $item) {
-            $createdItems[] = DecisionListItem::create([
-                'list_id' => $list->id,
-                'label' => $item,
-            ]);
-        }
+        $owner = User::factory()->create();
+        $friend = User::factory()->create();
 
-        // Create all possible matchups
-        for ($i = 0; $i < count($createdItems); $i++) {
-            for ($j = $i + 1; $j < count($createdItems); $j++) {
-                \App\Models\Matchup::create([
-                    'list_id' => $list->id,
-                    'item_a_id' => $createdItems[$i]->id,
-                    'item_b_id' => $createdItems[$j]->id,
-                    'status' => 'pending',
-                ]);
-            }
-        }
+        $list = app(CreateList::class)->handle([
+            'title' => 'Movie Night',
+            'items' => ['Alien', 'Blade Runner', 'Casablanca'],
+        ], $owner);
 
-        // Test the VoteRound component
-        $component = Livewire::test(VoteRound::class, ['list' => $list]);
-            
-        // Get the current matchup from the component
-        $currentMatchupId = $component->get('currentMatchup.id');
-        $currentMatchup = \App\Models\Matchup::find($currentMatchupId);
-        
-        $component->assertSee('Which do you prefer?')
-            ->assertSee('Item A')
-            ->assertSee('Item B');
+        // Owner shares the list
+        $share = Livewire::actingAs($owner)
+            ->test(ShareList::class, ['list' => $list])
+            ->call('generateCode');
 
-        // Calculate expected number of matchups
-        $expectedMatchups = (count($items) * (count($items) - 1)) / 2;
-        
-        // Vote on all matchups
-        for ($i = 1; $i <= $expectedMatchups; $i++) {
-            // Get the current matchup from the component
-            $currentMatchupId = $component->get('currentMatchup.id');
-            $currentMatchup = \App\Models\Matchup::find($currentMatchupId);
-            
-            $this->assertNotNull($currentMatchup, "Failed to get current matchup from component for round {$i}");
-            $this->assertEquals('pending', $currentMatchup->status, "Expected matchup to be pending for round {$i}");
-            
-            // Vote for the left item (item_a)
-            $component->call('vote', $currentMatchup->item_a_id)
-                ->assertOk();
-        }
+        $code = $list->fresh()->activeShareCode();
+        $this->assertNotNull($code);
 
-        // Test the results view
-        $component = Livewire::test(\App\Livewire\List\RankedResults::class, ['list' => $list])
-            ->assertSee('Rank')
-            ->assertSee('Item')
-            ->assertSee('Wins');
-        
-        // Verify each item is present
-        foreach ($items as $item) {
-            $component->assertSee($item);
-        }
+        // Friend joins with the code and is redirected to vote
+        Livewire::actingAs($friend)
+            ->test(JoinList::class, ['code' => $code->code])
+            ->assertRedirect(route('lists.vote', ['list' => $list]));
+
+        $this->assertTrue($list->fresh()->hasParticipant($friend));
+
+        // Both voters vote on all matchups
+        $ownerVoting = Livewire::actingAs($owner)->test(VoteRound::class, ['list' => $list]);
+        $this->voteThroughAll($ownerVoting);
+
+        // Owner finishing a shared list does not close it
+        $this->assertFalse($list->fresh()->isVotingClosed());
+
+        $friendVoting = Livewire::actingAs($friend)->test(VoteRound::class, ['list' => $list]);
+        $this->voteThroughAll($friendVoting);
+        $friendVoting->assertNoRedirect();
+
+        // Every matchup collected one vote per voter
+        $this->assertEquals(6, $list->votes()->count());
+
+        // Friend cannot see results while voting is open
+        Livewire::actingAs($friend)
+            ->test(RankedResults::class, ['list' => $list->fresh()])
+            ->assertStatus(403);
+
+        // Owner closes voting; the code deactivates and results open up
+        Livewire::actingAs($owner)
+            ->test(ShareList::class, ['list' => $list->fresh()])
+            ->call('closeVoting')
+            ->assertRedirect(route('lists.results', ['list' => $list]));
+
+        $this->assertTrue($list->fresh()->isVotingClosed());
+        $this->assertFalse($list->fresh()->isShared());
+
+        Livewire::actingAs($friend)
+            ->test(RankedResults::class, ['list' => $list->fresh()])
+            ->assertSee('Victories')
+            ->assertSee('Winner');
+
+        // Both voters picked item_a every time, so item_a of each matchup
+        // accumulated two votes; the overall winner has 4 victories.
+        $owner = Livewire::actingAs($owner)
+            ->test(RankedResults::class, ['list' => $list->fresh()])
+            ->assertSee('2 voters participated');
     }
 
-    public function test_five_item_voting_flow_with_vote_counts(): void
+    public function test_share_codes_cannot_be_redeemed_after_close(): void
     {
-        // Create a test user
-        /** @var \App\Models\User $user */
-        $user = User::factory()->create();
-        
-        // Create a test list with items
-        $list = DecisionList::factory()->create([
-            'user_id' => $user->id,
-            'title' => 'Five Item Voting Test',
-        ]);
-        
-        // Add 5 items to the list
-        $items = [
-            'Item 1',
-            'Item 2',
-            'Item 3',
-            'Item 4',
-            'Item 5',
-        ];
-        
-        $createdItems = [];
-        foreach ($items as $item) {
-            $createdItems[] = DecisionListItem::create([
-                'list_id' => $list->id,
-                'label' => $item,
-            ]);
-        }
+        $owner = User::factory()->create();
+        $friend = User::factory()->create();
 
-        // Create all possible matchups
-        for ($i = 0; $i < count($createdItems); $i++) {
-            for ($j = $i + 1; $j < count($createdItems); $j++) {
-                \App\Models\Matchup::create([
-                    'list_id' => $list->id,
-                    'item_a_id' => $createdItems[$i]->id,
-                    'item_b_id' => $createdItems[$j]->id,
-                    'status' => 'pending',
-                ]);
-            }
-        }
+        $list = app(CreateList::class)->handle([
+            'title' => 'Closed List',
+            'items' => ['A', 'B'],
+        ], $owner);
 
-        // Calculate expected number of matchups (n(n-1)/2)
-        $expectedMatchups = (count($items) * (count($items) - 1)) / 2;
-        
-        // Vote on all matchups
-        for ($i = 1; $i <= $expectedMatchups; $i++) {
-            // Initialize the VoteRound component
-            $component = Livewire::actingAs($user)
-                ->test(VoteRound::class, ['list' => $list]);
-            
-            // Get the current matchup from the component
-            $currentMatchupId = $component->get('currentMatchup.id');
-            $currentMatchup = \App\Models\Matchup::find($currentMatchupId);
-            
-            $this->assertNotNull($currentMatchup, "Failed to get current matchup from component for round {$i}");
-            $this->assertEquals('pending', $currentMatchup->status, "Expected matchup to be pending for round {$i}");
-            
-            // Vote for the left item (item_a)
-            $component->call('vote', $currentMatchup->item_a_id)
-                ->assertOk();
-                
-            // Debug the component state
-            $this->assertDatabaseHas('votes', [
-                'matchup_id' => $currentMatchup->id,
-                'chosen_item_id' => $currentMatchup->item_a_id,
-            ]);
-            
-            // Verify the matchup was marked as completed
-            $updatedMatchup = \App\Models\Matchup::find($currentMatchup->id);
-            $this->assertNotNull($updatedMatchup, "Failed to find matchup after voting");
-            $this->assertEquals('completed', $updatedMatchup->status, 
-                "Matchup {$i} status is '{$updatedMatchup->status}' instead of 'completed' after voting");
-        }
+        Livewire::actingAs($owner)
+            ->test(ShareList::class, ['list' => $list])
+            ->call('generateCode');
 
-        // Verify all matchups are completed
-        $this->assertEquals(
-            0,
-            \App\Models\Matchup::where('list_id', $list->id)
-                ->where('status', 'pending')
-                ->count(),
-            "There should be no pending matchups after voting"
-        );
+        $code = $list->fresh()->activeShareCode()->code;
 
-        // Test the results view
-        $component = Livewire::test(\App\Livewire\List\RankedResults::class, ['list' => $list])
-            ->assertSee('Rank')
-            ->assertSee('Item')
-            ->assertSee('Wins');
-        
-        // Verify each item is present
-        foreach ($items as $item) {
-            $component->assertSee($item);
-        }
-        
-        // Verify vote counts for each item that was on the left side
-        $expectedLeftSideWins = [];
-        foreach ($createdItems as $index => $item) {
-            $expectedLeftSideWins[$item->id] = count($createdItems) - $index - 1;
-        }
-        
-        foreach ($expectedLeftSideWins as $itemId => $expectedWins) {
-            $actualWins = \App\Models\Vote::where('chosen_item_id', $itemId)->count();
-            $this->assertEquals(
-                $expectedWins,
-                $actualWins,
-                "Item {$itemId} should have {$expectedWins} wins as it was on the left side"
-            );
-        }
+        Livewire::actingAs($owner)
+            ->test(ShareList::class, ['list' => $list->fresh()])
+            ->call('closeVoting');
+
+        Livewire::actingAs($friend)
+            ->test(JoinList::class)
+            ->set('code', $code)
+            ->call('join')
+            ->assertHasErrors(['code']);
+
+        $this->assertFalse($list->fresh()->hasParticipant($friend));
     }
-} 
+
+    public function test_deadline_expiry_closes_voting(): void
+    {
+        $owner = User::factory()->create();
+
+        $list = app(CreateList::class)->handle([
+            'title' => 'Deadline List',
+            'items' => ['A', 'B'],
+        ], $owner);
+
+        Livewire::actingAs($owner)
+            ->test(ShareList::class, ['list' => $list])
+            ->set('duration', '1day')
+            ->call('generateCode');
+
+        $this->assertNotNull($list->fresh()->voting_closes_at);
+        $this->assertTrue($list->fresh()->isVotingOpen());
+
+        $this->travel(2)->days();
+
+        $this->assertTrue($list->fresh()->isVotingClosed());
+
+        // Voting attempts are turned away
+        Livewire::actingAs($owner)
+            ->test(VoteRound::class, ['list' => $list->fresh()])
+            ->assertRedirect(route('lists.results', ['list' => $list]));
+    }
+}

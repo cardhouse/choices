@@ -4,6 +4,7 @@ namespace App\Livewire\List;
 
 use App\Models\DecisionList;
 use App\Services\ScoreCalculator;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -11,20 +12,27 @@ use Livewire\Component;
 class RankedResults extends Component
 {
     public DecisionList $list;
-    public bool $showVoteCounts = false;
 
-    public function mount(DecisionList $list, bool $showVoteCounts = false)
+    public function mount(DecisionList $list)
     {
+        Gate::authorize('viewResults', $list);
+
         $this->list = $list;
-        $this->showVoteCounts = $showVoteCounts;
     }
 
     public function render()
     {
-        $results = app(ScoreCalculator::class)->forList($this->list);
-        
+        $calculator = app(ScoreCalculator::class);
+
+        // Owners get the detailed analytics: voter count and the full
+        // head-to-head matrix. Everyone else sees the rankings only.
+        $isOwner = $this->list->isOwnedBy(auth()->user());
+
         return view('livewire.list.ranked-results', [
-            'results' => $results,
+            'results' => $calculator->forList($this->list),
+            'showDetails' => $isOwner,
+            'voterCount' => $isOwner ? $calculator->voterCountForList($this->list) : null,
+            'votingStillOpen' => $this->list->isVotingOpen(),
         ]);
     }
-} 
+}

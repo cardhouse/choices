@@ -8,17 +8,17 @@ use App\Models\User;
 class ListPolicy
 {
     /**
-     * Determine whether the user can view the list.
+     * Determine whether the user (or guest) can view the list.
      */
-    public function view(User $user, DecisionList $list): bool
+    public function view(?User $user, DecisionList $list): bool
     {
-        // Allow viewing if:
-        // 1. User owns the list
-        // 2. List is unclaimed (anonymous)
-        // 3. List has an active share code
-        return $user->id === $list->user_id
-            || ($list->is_anonymous && ! $list->claimed_at)
-            || $list->shareCodes()->active()->exists();
+        // Unclaimed anonymous lists are visible to their (guest) creator;
+        // there is no ownership record, so anyone with the URL qualifies.
+        if ($list->is_anonymous && ! $list->claimed_at) {
+            return true;
+        }
+
+        return $list->isOwnedBy($user) || $list->hasParticipant($user);
     }
 
     /**
@@ -26,7 +26,6 @@ class ListPolicy
      */
     public function create(User $user): bool
     {
-        // Any authenticated user can create lists
         return true;
     }
 
@@ -35,8 +34,7 @@ class ListPolicy
      */
     public function update(User $user, DecisionList $list): bool
     {
-        // Only the owner can update the list
-        return $user->id === $list->user_id;
+        return $list->isOwnedBy($user);
     }
 
     /**
@@ -44,8 +42,7 @@ class ListPolicy
      */
     public function delete(User $user, DecisionList $list): bool
     {
-        // Only the owner can delete the list
-        return $user->id === $list->user_id;
+        return $list->isOwnedBy($user);
     }
 
     /**
@@ -53,23 +50,44 @@ class ListPolicy
      */
     public function claim(User $user, DecisionList $list): bool
     {
-        // Can claim if:
-        // 1. List is anonymous
-        // 2. List is not already claimed
         return $list->is_anonymous && $list->claimed_at === null;
     }
 
     /**
+     * Determine whether the user (or guest) can vote on the list.
+     */
+    public function vote(?User $user, DecisionList $list): bool
+    {
+        if ($list->isVotingClosed()) {
+            return false;
+        }
+
+        if ($list->is_anonymous && ! $list->claimed_at) {
+            return true;
+        }
+
+        return $list->isOwnedBy($user) || $list->hasParticipant($user);
+    }
+
+    /**
      * Determine whether the user can view the list results.
+     *
+     * The owner can always peek; everyone else waits until voting closes.
      */
     public function viewResults(User $user, DecisionList $list): bool
     {
-        // Allow viewing results if:
-        // 1. User owns the list
-        // 2. List is anonymous and voting is complete
-        // 3. List has an active share code and voting is complete
-        return $user->id === $list->user_id
-            || ($list->is_anonymous && $list->voting_completed_at !== null)
-            || ($list->shareCodes()->active()->exists() && $list->voting_completed_at !== null);
+        if ($list->isOwnedBy($user)) {
+            return true;
+        }
+
+        return $list->isVotingClosed() && $list->hasParticipant($user);
+    }
+
+    /**
+     * Determine whether the user can share the list or close its voting.
+     */
+    public function manageVoting(User $user, DecisionList $list): bool
+    {
+        return $list->isOwnedBy($user);
     }
 }

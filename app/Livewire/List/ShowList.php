@@ -3,6 +3,9 @@
 namespace App\Livewire\List;
 
 use App\Models\DecisionList;
+use App\Models\Vote;
+use App\Support\Voter;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -14,21 +17,11 @@ class ShowList extends Component
      */
     public DecisionList $list;
 
-    /**
-     * The view to display.
-     */
-    public ?string $view = null;
-
-    /**
-     * Mount the component.
-     *
-     * @param  DecisionList  $list  The list to display
-     * @param  string|null  $view  The view to display
-     */
-    public function mount(DecisionList $list, ?string $view = null): void
+    public function mount(DecisionList $list): void
     {
+        Gate::authorize('view', $list);
+
         $this->list = $list;
-        $this->view = $view;
     }
 
     /**
@@ -44,14 +37,19 @@ class ShowList extends Component
      */
     public function render()
     {
-        if ($this->view === 'results') {
-            return view('livewire.list.show-list', [
-                'results' => true
-            ]);
-        }
+        $voterVoteCount = Vote::query()
+            ->byVoter(Voter::current())
+            ->whereIn('matchup_id', $this->list->matchups()->pluck('id'))
+            ->count();
+
+        $totalMatchups = $this->list->matchups()->count();
 
         return view('livewire.list.show-list', [
-            'results' => false
+            'canVote' => Gate::allows('vote', $this->list),
+            'canSeeResults' => auth()->check() && Gate::allows('viewResults', $this->list),
+            'canManageVoting' => auth()->check() && Gate::allows('manageVoting', $this->list),
+            'voterFinished' => $totalMatchups > 0 && $voterVoteCount >= $totalMatchups,
+            'voterStarted' => $voterVoteCount > 0,
         ]);
     }
 }

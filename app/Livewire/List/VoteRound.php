@@ -2,12 +2,17 @@
 
 namespace App\Livewire\List;
 
+use App\Actions\Voting\CastVote;
+use App\Actions\Voting\CloseVoting;
+use App\Http\Requests\VoteRequest;
 use App\Models\DecisionList;
 use App\Models\DecisionListItem;
 use App\Models\Matchup;
 use App\Models\Vote;
+use App\Support\Voter;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -15,158 +20,138 @@ use Livewire\Component;
 class VoteRound extends Component
 {
     public DecisionList $list;
-    public ?Matchup $currentMatchup = null;
-    public int $totalMatchups = 0;
-    public int $completedMatchups = 0;
-    public float $progress = 0;
-    public array $matchupOrder = [];
 
-    public function mount(DecisionList $list): void
+    public ?Matchup $currentMatchup = null;
+
+    public int $totalMatchups = 0;
+
+    public int $completedMatchups = 0;
+
+    public float $progress = 0;
+
+    /**
+     * Matchup ids this voter still has to vote on, in randomized order.
+     *
+     * @var array<int, int>
+     */
+    public array $matchupQueue = [];
+
+    /**
+     * Whether this voter has voted on every matchup.
+     */
+    public bool $finished = false;
+
+    public function mount(DecisionList $list)
     {
         $this->list = $list;
-        
-        // Calculate total matchups using the formula n(n-1)/2
-        $itemCount = $list->items()->count();
-        $this->totalMatchups = ($itemCount * ($itemCount - 1)) / 2;
-        
-        // Get all pending matchups and randomize their order
-        $this->matchupOrder = $list->matchups()
-            ->where('status', 'pending')
+
+        if ($list->isVotingClosed()) {
+            if (Auth::check() && Gate::allows('viewResults', $list)) {
+                return redirect()->route('lists.results', ['list' => $list]);
+            }
+
+            session()->flash('message', 'Voting has closed on this list.');
+
+            return redirect()->route('lists.show', ['list' => $list]);
+        }
+
+        Gate::authorize('vote', $list);
+
+        $voter = Voter::current();
+
+        $this->totalMatchups = $list->matchups()->count();
+
+        $votedMatchupIds = Vote::query()
+            ->byVoter($voter)
+            ->whereIn('matchup_id', $list->matchups()->pluck('id'))
+            ->pluck('matchup_id');
+
+        $this->matchupQueue = $list->matchups()
+            ->whereNotIn('id', $votedMatchupIds)
             ->pluck('id')
             ->shuffle()
             ->toArray();
-        
-        $this->completedMatchups = $list->matchups()
-            ->where('status', 'completed')
-            ->count();
-            
+
+        $this->completedMatchups = $this->totalMatchups - count($this->matchupQueue);
+
         $this->loadNextMatchup();
-        $this->updateProgress();
-    }
-
-    public function loadNextMatchup(): void
-    {
-        // Get the next matchup ID from our randomized order
-        $nextMatchupId = array_shift($this->matchupOrder);
-        
-        if ($nextMatchupId) {
-            $this->currentMatchup = Matchup::find($nextMatchupId);
-        } else {
-            // If no more matchups in our order, check if there are any pending matchups
-            $this->currentMatchup = $this->list->matchups()
-                ->where('status', 'pending')
-                ->first();
-        }
-
-        $this->updateProgress();
     }
 
     public function vote(int $chosenItemId): void
     {
-        if (!$this->currentMatchup) {
-            Log::info('No current matchup found');
+        if (! $this->currentMatchup) {
             return;
         }
 
-        // Validate that the chosen item is in the current matchup
-        if (!in_array($chosenItemId, [$this->currentMatchup->item_a_id, $this->currentMatchup->item_b_id])) {
-            Log::info('Invalid choice', [
-                'chosen_id' => $chosenItemId,
-                'item_a_id' => $this->currentMatchup->item_a_id,
-                'item_b_id' => $this->currentMatchup->item_b_id
-            ]);
-            $this->addError('vote', 'Invalid choice');
-            return;
-        }
+        $request = new VoteRequest;
 
-        // Check if a vote already exists for this matchup
-        $existingVote = Vote::where('matchup_id', $this->currentMatchup->id)
-            ->where(function ($query) {
-                if (Auth::check()) {
-                    $query->where('user_id', Auth::id());
-                } else {
-                    $query->where('session_token', session()->getId());
-                }
-            })
-            ->first();
-
-        if ($existingVote) {
-            Log::info('Updating existing vote', [
-                'vote_id' => $existingVote->id,
-                'old_choice' => $existingVote->chosen_item_id,
-                'new_choice' => $chosenItemId
-            ]);
-            // If the vote is for a different item, update it
-            if ($existingVote->chosen_item_id !== $chosenItemId) {
-                $existingVote->update([
-                    'chosen_item_id' => $chosenItemId,
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ]);
-
-                // Update the matchup winner
-                $this->currentMatchup->winner_item_id = $chosenItemId;
-                $this->currentMatchup->save();
-            }
-        } else {
-            Log::info('Creating new vote', [
+        Validator::make(
+            [
                 'matchup_id' => $this->currentMatchup->id,
-                'user_id' => Auth::id(),
-                'chosen_id' => $chosenItemId
-            ]);
-            // Create the vote
-            Vote::create([
-                'matchup_id' => $this->currentMatchup->id,
-                'user_id' => Auth::id(),
                 'chosen_item_id' => $chosenItemId,
-                'session_token' => Auth::check() ? null : session()->getId(),
+            ],
+            $request->rules(),
+            $request->messages(),
+        )->validate();
+
+        app(CastVote::class)->handle(
+            Voter::current(),
+            $this->currentMatchup,
+            DecisionListItem::findOrFail($chosenItemId),
+            [
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
-            ]);
+            ],
+        );
 
-            // Update the matchup
-            Log::info('Updating matchup status', [
-                'matchup_id' => $this->currentMatchup->id,
-                'before_status' => $this->currentMatchup->status
-            ]);
-            
-            $this->currentMatchup->winner_item_id = $chosenItemId;
-            $this->currentMatchup->status = 'completed';
-            $result = $this->currentMatchup->save();
-            
-            Log::info('Matchup status updated', [
-                'matchup_id' => $this->currentMatchup->id,
-                'after_status' => $this->currentMatchup->status,
-                'save_result' => $result
-            ]);
+        $this->completedMatchups++;
+        $this->loadNextMatchup();
 
-            // Update completed matchups count
-            $this->completedMatchups++;
+        if ($this->currentMatchup === null) {
+            $this->finishVoting();
         }
+    }
+
+    protected function loadNextMatchup(): void
+    {
+        $nextMatchupId = array_shift($this->matchupQueue);
+
+        $this->currentMatchup = $nextMatchupId ? Matchup::find($nextMatchupId) : null;
+        $this->finished = $this->currentMatchup === null;
 
         $this->updateProgress();
-        
-        // Load the next matchup if there are more
-        if ($this->completedMatchups < $this->totalMatchups) {
-            $this->loadNextMatchup();
-        } else {
-            // All matchups are completed
-            // Update the list's voting_completed_at timestamp
-            $this->list->update([
-                'voting_completed_at' => now()
-            ]);
+    }
 
-            if (Auth::check()) {
-                // Authenticated users go straight to results
-                $this->redirect(route('lists.results', ['list' => $this->list]));
-            } else {
-                // Anonymous users need to register to see results
-                session()->put('anonymous_list_id', $this->list->id);
-                session()->put('intended_url', route('lists.results', ['list' => $this->list]));
-                session()->flash('message', 'Please register or login to view your voting results. Your votes have been saved and will be available after registration.');
-                $this->redirect(route('lists.prompt', ['list' => $this->list]));
-            }
+    /**
+     * This voter has voted on every matchup; decide where they land.
+     */
+    protected function finishVoting(): void
+    {
+        // A list that was never shared has exactly one voter, so their last
+        // vote concludes the decision. Shared lists stay open for the other
+        // participants until the owner closes voting or the deadline passes.
+        if (! $this->list->isShared()) {
+            app(CloseVoting::class)->handle($this->list);
         }
+
+        if (Auth::check()) {
+            if (Gate::allows('viewResults', $this->list)) {
+                $this->redirect(route('lists.results', ['list' => $this->list]));
+            }
+
+            // Participant on a still-open shared list: stay on the page and
+            // show the waiting state rendered when $finished is true.
+            return;
+        }
+
+        // Anonymous voters register to see results. The session id is stashed
+        // because login/registration regenerates it, and the claim needs the
+        // token their votes were recorded under.
+        session()->put('anonymous_list_id', $this->list->id);
+        session()->put('anonymous_session_token', session()->getId());
+        session()->put('intended_url', route('lists.results', ['list' => $this->list]));
+        session()->flash('message', 'Please register or login to view your voting results. Your votes have been saved and will be available after registration.');
+        $this->redirect(route('lists.prompt', ['list' => $this->list]));
     }
 
     protected function updateProgress(): void
@@ -180,4 +165,4 @@ class VoteRound extends Component
     {
         return view('livewire.list.vote-round');
     }
-} 
+}

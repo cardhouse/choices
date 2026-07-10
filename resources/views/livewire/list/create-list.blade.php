@@ -76,19 +76,15 @@
                 </div>
             </div>
 
-            <!-- Options Card -->
-            <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-8 mb-4">
-                <div class="flex items-center">
-                    <input type="checkbox" wire:model="isAnonymous" id="anonymous"
-                        class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="anonymous" class="ml-3 block text-base sm:text-lg text-gray-900 font-medium">
-                        Create as anonymous list
-                    </label>
+            @guest
+                <!-- Anonymous Notice Card -->
+                <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-8 mb-4">
+                    <p class="text-gray-500 text-sm sm:text-base">
+                        You're not logged in, so this list will be anonymous. Anonymous lists
+                        expire after 30 minutes unless you register and claim them.
+                    </p>
                 </div>
-                <p class="mt-2 text-gray-500 text-sm sm:text-base">
-                    Anonymous lists expire after 30 minutes unless you register and claim them.
-                </p>
-            </div>
+            @endguest
 
             <!-- Submit Button -->
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">

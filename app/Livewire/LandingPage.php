@@ -4,8 +4,8 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 /**
  * Landing page component that introduces the application and provides entry points

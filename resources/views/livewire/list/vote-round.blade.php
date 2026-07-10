@@ -46,13 +46,25 @@
         @else
             <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-10 text-center">
                 <h2 class="text-xl sm:text-3xl font-extrabold text-gray-900">Voting Complete!</h2>
-                <p class="mt-4 text-base sm:text-lg text-gray-600">All matchups have been completed.</p>
-                <div class="mt-8">
-                    <a href="{{ route('lists.show', ['list' => $list]) }}"
-                       class="inline-flex items-center justify-center w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl bg-blue-600 text-white text-base sm:text-lg font-bold shadow-lg hover:bg-blue-700 transition">
-                        View Results
-                    </a>
-                </div>
+                @if($list->isVotingClosed())
+                    <p class="mt-4 text-base sm:text-lg text-gray-600">All your matchups have been completed.</p>
+                    <div class="mt-8">
+                        <a href="{{ route('lists.results', ['list' => $list]) }}"
+                           class="inline-flex items-center justify-center w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl bg-blue-600 text-white text-base sm:text-lg font-bold shadow-lg hover:bg-blue-700 transition">
+                            View Results
+                        </a>
+                    </div>
+                @else
+                    <p class="mt-4 text-base sm:text-lg text-gray-600">
+                        You've voted on every matchup. Results will be revealed once voting closes for everyone.
+                    </p>
+                    <div class="mt-8">
+                        <a href="{{ route('lists.show', ['list' => $list]) }}"
+                           class="inline-flex items-center justify-center w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl bg-blue-600 text-white text-base sm:text-lg font-bold shadow-lg hover:bg-blue-700 transition">
+                            Back to List
+                        </a>
+                    </div>
+                @endif
             </div>
         @endif
         @error('vote')

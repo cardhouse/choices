@@ -3,10 +3,9 @@
 namespace Tests\Policies;
 
 use App\Models\DecisionList;
-use App\Models\ShareCode;
+use App\Models\ListParticipant;
 use App\Models\User;
 use App\Policies\ListPolicy;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,200 +27,176 @@ class ListPolicyTest extends TestCase
         $this->list = DecisionList::factory()->create();
     }
 
-    /**
-     * Test that a user can view their own list.
-     */
-    public function test_user_can_view_own_list(): void
+    private function makeParticipant(User $user, DecisionList $list): void
     {
-        $this->list->user_id = $this->user->id;
-        $this->list->save();
-
-        $this->assertTrue($this->policy->view($this->user, $this->list));
-    }
-
-    /**
-     * Test that a user can view an anonymous list.
-     */
-    public function test_user_can_view_anonymous_list(): void
-    {
-        $this->list->is_anonymous = true;
-        $this->list->claimed_at = null;
-        $this->list->user_id = User::factory()->create()->id;
-        $this->list->save();
-
-        $this->assertTrue($this->policy->view($this->user, $this->list));
-    }
-
-    /**
-     * Test that a user can view a list with an active share code.
-     */
-    public function test_user_can_view_list_with_active_share_code(): void
-    {
-        ShareCode::factory()->create([
-            'list_id' => $this->list->id,
-            'expires_at' => Carbon::now()->addDay(),
+        ListParticipant::factory()->create([
+            'list_id' => $list->id,
+            'user_id' => $user->id,
         ]);
+    }
+
+    // ── view ────────────────────────────────────────────────────────────
+
+    public function test_owner_can_view_own_list(): void
+    {
+        $this->list->update(['user_id' => $this->user->id]);
 
         $this->assertTrue($this->policy->view($this->user, $this->list));
     }
 
-    /**
-     * Test that a user cannot view a list they don't own without a share code.
-     */
-    public function test_user_cannot_view_others_list_without_share_code(): void
+    public function test_anyone_can_view_unclaimed_anonymous_list(): void
     {
-        $this->list->is_anonymous = false;
-        $this->list->claimed_at = null;
-        $this->list->user_id = User::factory()->create()->id;
-        $this->list->save();
+        $list = DecisionList::factory()->anonymous()->create();
 
-        $this->assertFalse($this->policy->view($this->user, $this->list));
+        $this->assertTrue($this->policy->view($this->user, $list));
+        $this->assertTrue($this->policy->view(null, $list));
     }
 
-    /**
-     * Test that any authenticated user can create lists.
-     */
+    public function test_participant_can_view_list(): void
+    {
+        $this->makeParticipant($this->user, $this->list);
+
+        $this->assertTrue($this->policy->view($this->user, $this->list));
+    }
+
+    public function test_stranger_cannot_view_others_list(): void
+    {
+        $this->assertFalse($this->policy->view($this->user, $this->list));
+        $this->assertFalse($this->policy->view(null, $this->list));
+    }
+
+    // ── create / update / delete / claim ────────────────────────────────
+
     public function test_any_user_can_create_lists(): void
     {
         $this->assertTrue($this->policy->create($this->user));
     }
 
-    /**
-     * Test that a user can update their own list.
-     */
-    public function test_user_can_update_own_list(): void
-    {
-        $this->list->user_id = $this->user->id;
-        $this->list->save();
-
-        $this->assertTrue($this->policy->update($this->user, $this->list));
-    }
-
-    /**
-     * Test that a user cannot update another user's list.
-     */
-    public function test_user_cannot_update_others_list(): void
+    public function test_only_owner_can_update(): void
     {
         $this->assertFalse($this->policy->update($this->user, $this->list));
+
+        $this->list->update(['user_id' => $this->user->id]);
+        $this->assertTrue($this->policy->update($this->user, $this->list->fresh()));
     }
 
-    /**
-     * Test that a user can delete their own list.
-     */
-    public function test_user_can_delete_own_list(): void
-    {
-        $this->list->user_id = $this->user->id;
-        $this->list->save();
-
-        $this->assertTrue($this->policy->delete($this->user, $this->list));
-    }
-
-    /**
-     * Test that a user cannot delete another user's list.
-     */
-    public function test_user_cannot_delete_others_list(): void
+    public function test_only_owner_can_delete(): void
     {
         $this->assertFalse($this->policy->delete($this->user, $this->list));
+
+        $this->list->update(['user_id' => $this->user->id]);
+        $this->assertTrue($this->policy->delete($this->user, $this->list->fresh()));
     }
 
-    /**
-     * Test that a user can claim an anonymous, unclaimed list.
-     */
     public function test_user_can_claim_anonymous_unclaimed_list(): void
     {
-        $this->list->is_anonymous = true;
-        $this->list->claimed_at = null;
-        $this->list->save();
+        $list = DecisionList::factory()->anonymous()->create();
 
-        $this->assertTrue($this->policy->claim($this->user, $this->list));
+        $this->assertTrue($this->policy->claim($this->user, $list));
     }
 
-    /**
-     * Test that a user cannot claim a non-anonymous list.
-     */
     public function test_user_cannot_claim_non_anonymous_list(): void
     {
-        $this->list->is_anonymous = false;
-        $this->list->claimed_at = null;
-        $this->list->save();
-
         $this->assertFalse($this->policy->claim($this->user, $this->list));
     }
 
-    /**
-     * Test that a user cannot claim an already claimed list.
-     */
     public function test_user_cannot_claim_already_claimed_list(): void
     {
-        $this->list->is_anonymous = true;
-        $this->list->claimed_at = now();
-        $this->list->save();
+        $list = DecisionList::factory()->anonymous()->claimed()->create();
 
-        $this->assertFalse($this->policy->claim($this->user, $this->list));
+        $this->assertFalse($this->policy->claim($this->user, $list));
     }
 
-    public function test_owner_can_view_results()
-    {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'user_id' => $user->id,
-            'voting_completed_at' => now(),
-        ]);
+    // ── vote ────────────────────────────────────────────────────────────
 
-        $this->assertTrue($this->policy->viewResults($user, $list));
+    public function test_owner_can_vote_while_open(): void
+    {
+        $this->list->update(['user_id' => $this->user->id]);
+
+        $this->assertTrue($this->policy->vote($this->user, $this->list));
     }
 
-    public function test_anonymous_list_can_view_results_after_voting_complete()
+    public function test_participant_can_vote_while_open(): void
     {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'user_id' => null,
-            'is_anonymous' => true,
-            'voting_completed_at' => now(),
-        ]);
+        $this->makeParticipant($this->user, $this->list);
 
-        $this->assertTrue($this->policy->viewResults($user, $list));
+        $this->assertTrue($this->policy->vote($this->user, $this->list));
     }
 
-    public function test_anonymous_list_cannot_view_results_before_voting_complete()
+    public function test_guest_can_vote_on_unclaimed_anonymous_list(): void
     {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'user_id' => null,
-            'is_anonymous' => true,
-            'voting_completed_at' => null,
-        ]);
+        $list = DecisionList::factory()->anonymous()->create();
 
-        $this->assertFalse($this->policy->viewResults($user, $list));
+        $this->assertTrue($this->policy->vote(null, $list));
     }
 
-    public function test_shared_list_can_view_results_after_voting_complete()
+    public function test_stranger_cannot_vote(): void
     {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'voting_completed_at' => now(),
-        ]);
-
-        ShareCode::factory()->create([
-            'list_id' => $list->id,
-            'expires_at' => now()->addDay(),
-        ]);
-
-        $this->assertTrue($this->policy->viewResults($user, $list));
+        $this->assertFalse($this->policy->vote($this->user, $this->list));
+        $this->assertFalse($this->policy->vote(null, $this->list));
     }
 
-    public function test_shared_list_cannot_view_results_before_voting_complete()
+    public function test_no_one_can_vote_once_closed(): void
     {
-        $user = User::factory()->create();
-        $list = DecisionList::factory()->create([
-            'voting_completed_at' => null,
+        $this->list->update([
+            'user_id' => $this->user->id,
+            'voting_closed_at' => now(),
         ]);
 
-        ShareCode::factory()->create([
-            'list_id' => $list->id,
-            'expires_at' => now()->addDay(),
+        $this->assertFalse($this->policy->vote($this->user, $this->list->fresh()));
+    }
+
+    public function test_voting_closes_when_deadline_passes(): void
+    {
+        $this->list->update([
+            'user_id' => $this->user->id,
+            'voting_closes_at' => now()->subMinute(),
         ]);
 
-        $this->assertFalse($this->policy->viewResults($user, $list));
+        $this->assertFalse($this->policy->vote($this->user, $this->list->fresh()));
+    }
+
+    // ── viewResults ─────────────────────────────────────────────────────
+
+    public function test_owner_can_view_results_even_while_open(): void
+    {
+        $this->list->update(['user_id' => $this->user->id]);
+
+        $this->assertTrue($this->policy->viewResults($this->user, $this->list));
+    }
+
+    public function test_participant_can_view_results_after_close(): void
+    {
+        $this->makeParticipant($this->user, $this->list);
+        $this->list->update(['voting_closed_at' => now()]);
+
+        $this->assertTrue($this->policy->viewResults($this->user, $this->list->fresh()));
+    }
+
+    public function test_participant_cannot_view_results_while_open(): void
+    {
+        $this->makeParticipant($this->user, $this->list);
+
+        $this->assertFalse($this->policy->viewResults($this->user, $this->list));
+    }
+
+    public function test_stranger_cannot_view_results_after_close(): void
+    {
+        $this->list->update(['voting_closed_at' => now()]);
+
+        $this->assertFalse($this->policy->viewResults($this->user, $this->list->fresh()));
+    }
+
+    // ── manageVoting ────────────────────────────────────────────────────
+
+    public function test_only_owner_can_manage_voting(): void
+    {
+        $this->assertFalse($this->policy->manageVoting($this->user, $this->list));
+
+        $this->makeParticipant($this->user, $this->list);
+        $this->assertFalse($this->policy->manageVoting($this->user, $this->list));
+
+        $this->list->update(['user_id' => $this->user->id]);
+        $this->assertTrue($this->policy->manageVoting($this->user, $this->list->fresh()));
     }
 }

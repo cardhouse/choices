@@ -2,13 +2,9 @@
 
 namespace App\Livewire\Auth;
 
-use App\Models\DecisionList;
-use App\Services\ListClaimService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -48,27 +44,8 @@ class Login extends Component
 
         RateLimiter::clear($this->throttleKey());
 
-        // Check if there's an anonymous list to claim
-        $listId = session('anonymous_list_id');
-        if ($listId) {
-            try {
-                $list = DecisionList::find($listId);
-                if ($list && $list->is_anonymous && ! $list->claimed_at) {
-                    app(ListClaimService::class)->claimList($list, Auth::user());
-                    
-                    Log::info('Anonymous list claimed after login', [
-                        'list_id' => $list->id,
-                        'user_id' => Auth::id(),
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::error('Failed to claim anonymous list during login', [
-                    'list_id' => $listId,
-                    'user_id' => Auth::id(),
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
+        // Any pending anonymous list is claimed by the ClaimAnonymousList
+        // middleware on the next request.
 
         // If there's an intended URL, redirect there, otherwise go to dashboard
         $intendedUrl = session('intended_url');

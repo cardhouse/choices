@@ -64,7 +64,10 @@
         <div class="bg-white rounded-3xl shadow p-4 sm:p-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
                 <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Your Lists</h2>
-                <a href="{{ route('lists.create') }}" class="text-blue-600 font-medium hover:underline">+ New List</a>
+                <div class="flex gap-4">
+                    <a href="{{ route('lists.join') }}" class="text-blue-600 font-medium hover:underline">Join with a Code</a>
+                    <a href="{{ route('lists.create') }}" class="text-blue-600 font-medium hover:underline">+ New List</a>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-xs sm:text-sm text-left">
@@ -87,7 +90,9 @@
                                         <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">Completed</span>
                                     @elseif($list->status === 'anonymous')
                                         <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">Anonymous</span>
-                                    @elseif($list->status === 'pending')
+                                    @elseif($list->status === 'shared')
+                                        <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-semibold">Shared</span>
+                                    @elseif($list->status === 'open')
                                         <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">Active</span>
                                     @else
                                         <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold">Other</span>
@@ -99,7 +104,7 @@
                                     <!-- Desktop: Show all action buttons -->
                                     <div class="hidden sm:flex flex-row gap-2 justify-center">
                                         <a href="{{ route('lists.show', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200">View</a>
-                                        @if($list->status === 'pending')
+                                        @if(in_array($list->status, ['open', 'shared']))
                                             <a href="{{ route('lists.vote', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-green-100 text-green-700 rounded hover:bg-green-200">Vote</a>
                                         @endif
                                         @if($list->status === 'completed')
@@ -116,7 +121,7 @@
                                             </button>
                                             <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg z-20">
                                                 <a href="{{ route('lists.show', ['list' => $list]) }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">View</a>
-                                                @if($list->status === 'pending')
+                                                @if(in_array($list->status, ['open', 'shared']))
                                                     <a href="{{ route('lists.vote', ['list' => $list]) }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">Vote</a>
                                                 @endif
                                                 @if($list->status === 'completed')
@@ -136,5 +141,49 @@
                 </table>
             </div>
         </div>
+
+        @if($joinedLists->isNotEmpty())
+            <!-- Joined Lists Table -->
+            <div class="bg-white rounded-3xl shadow p-4 sm:p-6 mt-8">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Lists You've Joined</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs sm:text-sm text-left">
+                        <thead class="text-gray-500 uppercase tracking-wider bg-gray-50">
+                            <tr>
+                                <th class="px-2 sm:px-6 py-3">Title</th>
+                                <th class="px-2 sm:px-6 py-3">Status</th>
+                                <th class="px-2 sm:px-6 py-3 text-center hidden sm:table-cell">Items</th>
+                                <th class="px-2 sm:px-6 py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach($joinedLists as $list)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-2 sm:px-6 py-4 text-gray-800">{{ $list->title }}</td>
+                                    <td class="px-2 sm:px-6 py-4">
+                                        @if($list->status === 'completed')
+                                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">Completed</span>
+                                        @else
+                                            <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">Voting Open</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-2 sm:px-6 py-4 text-center hidden sm:table-cell">{{ $list->items_count }}</td>
+                                    <td class="px-2 sm:px-6 py-4 text-center">
+                                        <div class="flex flex-row gap-2 justify-center">
+                                            <a href="{{ route('lists.show', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200">View</a>
+                                            @if($list->status === 'completed')
+                                                <a href="{{ route('lists.results', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">Results</a>
+                                            @else
+                                                <a href="{{ route('lists.vote', ['list' => $list]) }}" class="px-3 py-1 text-xs sm:text-sm bg-green-100 text-green-700 rounded hover:bg-green-200">Vote</a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
