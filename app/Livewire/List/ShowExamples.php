@@ -2,6 +2,7 @@
 
 namespace App\Livewire\List;
 
+use App\Support\ExampleLists;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -14,23 +15,15 @@ class ShowExamples extends Component
     /**
      * Example lists to demonstrate the application's functionality
      */
-    public array $exampleLists = [
-        [
-            'title' => 'Dinner Menu Planning',
-            'description' => 'Deciding on next week\'s dinner menu',
-            'items' => ['Pizza', 'Sushi', 'Tacos', 'Pasta', 'Salad', 'Burgers'],
-        ],
-        [
-            'title' => 'Weekend Activity',
-            'description' => 'What should we do this weekend?',
-            'items' => ['Movie Night', 'Hiking', 'Board Games', 'Beach Trip', 'Shopping'],
-        ],
-        [
-            'title' => 'Project Priorities',
-            'description' => 'Ranking features for next sprint',
-            'items' => ['User Authentication', 'Payment Integration', 'Search Feature', 'Analytics Dashboard'],
-        ],
-    ];
+    public array $exampleLists = [];
+
+    /**
+     * Load the shared pre-built example lists.
+     */
+    public function mount(): void
+    {
+        $this->exampleLists = ExampleLists::all();
+    }
 
     /**
      * Start creating a new list based on an example

@@ -33,9 +33,10 @@
                 <div class="flex items-center gap-8">
                     <a href="{{ route('home') }}" class="text-blue-600 font-bold text-xl whitespace-nowrap">Choices</a>
                     @auth
-                        <!-- Authenticated: Show Dashboard link only -->
+                        <!-- Authenticated: Show Dashboard and Templates links -->
                         <div class="hidden sm:flex gap-6">
                             <a href="{{ route('dashboard') }}" class="text-gray-600 hover:text-blue-600">Dashboard</a>
+                            <a href="{{ route('templates.index') }}" class="text-gray-600 hover:text-blue-600">Templates</a>
                         </div>
                     @else
                         <!-- Guest: Show Home link only -->
@@ -64,6 +65,7 @@
                             </button>
                             <div x-show="dropdownOpen" @click.away="dropdownOpen = false" class="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-20">
                                 <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Dashboard</a>
+                                <a href="{{ route('templates.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">My Templates</a>
                                 <a href="{{ route('settings.profile') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Settings</a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -104,6 +106,7 @@
             <div class="pt-2 pb-3 space-y-1">
                 @auth
                     <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Dashboard</a>
+                    <a href="{{ route('templates.index') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">My Templates</a>
                     <a href="{{ route('settings.profile') }}" class="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100">Settings</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

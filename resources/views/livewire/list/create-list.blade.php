@@ -14,6 +14,58 @@
             <p class="text-base sm:text-lg text-gray-500">Add items you want to compare and we'll help you make the best choice through head-to-head voting.</p>
         </div>
 
+        <!-- Start from a Template -->
+        <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-8 mb-8" x-data="{ showTemplates: false }">
+            <button type="button" @click="showTemplates = !showTemplates" class="w-full flex items-center justify-between text-left">
+                <div>
+                    <h2 class="text-lg sm:text-2xl font-bold text-gray-900">Start from a Template</h2>
+                    <p class="text-gray-500 text-sm sm:text-base">Use one of your saved templates or a pre-built example to fill in the form.</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 shrink-0 transition-transform" :class="{ 'rotate-180': showTemplates }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="showTemplates" x-collapse class="mt-6 space-y-6">
+                @auth
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Saved Templates</h3>
+                        @if ($savedTemplates->isEmpty())
+                            <p class="text-gray-500 text-sm">
+                                You haven't saved any templates yet.
+                                <a href="{{ route('templates.index') }}" class="text-blue-600 hover:underline">Manage your templates</a>
+                                or check "Save as template" below when creating this list.
+                            </p>
+                        @else
+                            <div class="flex flex-wrap gap-2">
+                                @foreach ($savedTemplates as $template)
+                                    <button type="button" wire:click="applyTemplate({{ $template->id }})" wire:key="saved-template-{{ $template->id }}"
+                                        class="px-4 py-2 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 font-semibold text-sm hover:bg-blue-100 transition">
+                                        {{ $template->title }}
+                                        <span class="text-blue-400 font-normal">({{ count($template->items) }} items)</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                            <p class="mt-2 text-xs text-gray-400">
+                                <a href="{{ route('templates.index') }}" class="text-blue-600 hover:underline">Manage your templates</a>
+                            </p>
+                        @endif
+                    </div>
+                @endauth
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Pre-built Examples</h3>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($exampleLists as $index => $example)
+                            <button type="button" wire:click="applyExample({{ $index }})" wire:key="example-{{ $index }}"
+                                class="px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-semibold text-sm hover:bg-gray-100 transition">
+                                {{ $example['title'] }}
+                                <span class="text-gray-400 font-normal">({{ count($example['items']) }} items)</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Form -->
         <form wire:submit.prevent="createList" class="space-y-8 sm:space-y-10">
             <!-- List Details Card -->
@@ -75,6 +127,20 @@
                     </button>
                 </div>
             </div>
+
+            @auth
+                <!-- Save as Template Card -->
+                <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-8 mb-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" wire:model="saveAsTemplate"
+                            class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span>
+                            <span class="block text-base sm:text-lg font-semibold text-gray-800">Save as template</span>
+                            <span class="block text-gray-500 text-sm sm:text-base">Keep a reusable copy of this list in <a href="{{ route('templates.index') }}" class="text-blue-600 hover:underline">My Templates</a> so you can start from it again later.</span>
+                        </span>
+                    </label>
+                </div>
+            @endauth
 
             @guest
                 <!-- Anonymous Notice Card -->

@@ -11,6 +11,7 @@ use App\Livewire\List\VoteRound;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
+use App\Livewire\Templates\ManageTemplates;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingPage::class)->name('home');
@@ -29,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lists/{list}/results', RankedResults::class)->name('lists.results');
     Route::get('/join', JoinList::class)->name('lists.join');
     Route::get('/join/{code}', JoinList::class)->name('lists.join.code');
+    Route::get('/templates', ManageTemplates::class)->name('templates.index');
 });
 
 Route::get('/timer', function () {

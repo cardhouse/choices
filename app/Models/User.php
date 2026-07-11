@@ -56,6 +56,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Saved list templates this user can re-use.
+     */
+    public function listTemplates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ListTemplate::class);
+    }
+
+    /**
      * Lists this user joined via a share code.
      */
     public function participatingLists(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

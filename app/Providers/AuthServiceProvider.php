@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Models\DecisionList;
 use App\Models\DecisionListItem;
+use App\Models\ListTemplate;
 use App\Models\Vote;
 use App\Policies\DecisionListItemPolicy;
 use App\Policies\ListPolicy;
+use App\Policies\ListTemplatePolicy;
 use App\Policies\VotePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -20,6 +22,7 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         DecisionList::class => ListPolicy::class,
         DecisionListItem::class => DecisionListItemPolicy::class,
+        ListTemplate::class => ListTemplatePolicy::class,
         Vote::class => VotePolicy::class,
     ];
 

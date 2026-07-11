@@ -66,6 +66,7 @@
                 <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Your Lists</h2>
                 <div class="flex gap-4">
                     <a href="{{ route('lists.join') }}" class="text-blue-600 font-medium hover:underline">Join with a Code</a>
+                    <a href="{{ route('templates.index') }}" class="text-blue-600 font-medium hover:underline">My Templates</a>
                     <a href="{{ route('lists.create') }}" class="text-blue-600 font-medium hover:underline">+ New List</a>
                 </div>
             </div>
