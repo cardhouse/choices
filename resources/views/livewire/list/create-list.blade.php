@@ -96,11 +96,19 @@
                     <h2 class="text-lg sm:text-2xl font-bold text-gray-900 mb-1">Items to Compare</h2>
                     <p class="text-gray-500 mb-4">Add 2–100 items that you want to compare.</p>
                 </div>
-                <div class="space-y-4">
+                <div class="space-y-4" x-data="{
+                    async addItemAndFocus() {
+                        await this.$wire.addItem();
+                        await this.$nextTick();
+                        const inputs = document.querySelectorAll('[data-item-input]');
+                        inputs[inputs.length - 1]?.focus();
+                    }
+                }">
                     @foreach($items as $index => $item)
                         <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
                             <div class="flex-grow w-full">
-                                <input type="text" wire:model="items.{{ $index }}"
+                                <input type="text" wire:model="items.{{ $index }}" data-item-input
+                                    @keydown.shift.enter.prevent="addItemAndFocus"
                                     class="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg transition placeholder-gray-400"
                                     placeholder="Enter an item">
                                 @error("items.{$index}")
@@ -120,11 +128,12 @@
                     @error('items')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                    <button type="button" wire:click="addItem"
+                    <button type="button" @click="addItemAndFocus"
                         class="mt-4 sm:mt-6 w-full flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 font-semibold py-2 sm:py-3 hover:bg-blue-100 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
                         Add Another Item
                     </button>
+                    <p class="text-xs text-gray-400 text-center">Tip: press Shift+Enter in an item to add another.</p>
                 </div>
             </div>
 
