@@ -14,6 +14,43 @@
             <p class="text-base sm:text-lg text-gray-500">Add items you want to compare and we'll help you make the best choice through head-to-head voting.</p>
         </div>
 
+        @if ($fromTemplate && ! $editing)
+            <!-- Template loaded: offer to use as-is or customise first -->
+            <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-8 mb-8">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mb-4">From template</span>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900">{{ $title }}</h2>
+                @if ($description)
+                    <p class="text-gray-500 mt-1 text-sm sm:text-base">{{ $description }}</p>
+                @endif
+
+                @php($previewItems = array_values(array_filter($items, fn ($item) => trim($item) !== '')))
+                <div class="mt-5">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">{{ count($previewItems) }} items</h3>
+                    <ul class="divide-y divide-gray-200 border border-gray-100 rounded-xl overflow-hidden">
+                        @foreach ($previewItems as $item)
+                            <li class="px-4 py-2.5 text-gray-800 text-sm sm:text-base">{{ $item }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                <div class="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <button type="button" wire:click="useAsIs" wire:loading.attr="disabled" wire:target="useAsIs"
+                        class="inline-flex items-center justify-center w-full sm:flex-1 px-6 py-3 rounded-xl bg-blue-600 text-white text-base sm:text-lg font-bold shadow-lg hover:bg-blue-700 disabled:opacity-60 transition">
+                        <span wire:loading.remove wire:target="useAsIs">Use as is</span>
+                        <span wire:loading wire:target="useAsIs">Starting…</span>
+                    </button>
+                    <button type="button" wire:click="makeUpdates"
+                        class="inline-flex items-center justify-center w-full sm:flex-1 px-6 py-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-base sm:text-lg font-bold hover:bg-blue-100 transition">
+                        Make Updates
+                    </button>
+                </div>
+                <p class="mt-4 text-sm text-gray-400">
+                    <span class="font-semibold text-gray-500">Use as is</span> creates the list from this template and jumps straight into voting.
+                    <span class="font-semibold text-gray-500">Make Updates</span> lets you add or remove items first.
+                </p>
+            </div>
+        @else
+        @unless ($fromTemplate)
         <!-- Start from a Template -->
         <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-8 mb-8" x-data="{ showTemplates: false }">
             <button type="button" @click="showTemplates = !showTemplates" class="w-full flex items-center justify-between text-left">
@@ -65,6 +102,15 @@
                 </div>
             </div>
         </div>
+        @endunless
+
+        @if ($fromTemplate && $editing)
+            <button type="button" wire:click="backToOptions"
+                class="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                Back to options
+            </button>
+        @endif
 
         <!-- Form -->
         <form wire:submit.prevent="createList" class="space-y-8 sm:space-y-10">
@@ -169,5 +215,6 @@
                 </button>
             </div>
         </form>
+        @endif
     </div>
-</div> 
+</div>

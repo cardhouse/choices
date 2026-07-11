@@ -3,6 +3,7 @@
 namespace Tests\Livewire\List;
 
 use App\Livewire\List\CreateList;
+use App\Models\DecisionList;
 use App\Models\ListTemplate;
 use App\Models\User;
 use App\Support\ExampleLists;
@@ -39,6 +40,83 @@ class CreateListFromTemplateTest extends TestCase
             ->get(route('lists.create', ['template' => $template->id]))
             ->assertStatus(200)
             ->assertDontSee('Not Yours');
+    }
+
+    #[Test]
+    public function arriving_from_a_template_offers_use_as_is_or_make_updates()
+    {
+        $user = User::factory()->create();
+        $template = ListTemplate::factory()->for($user)->create([
+            'title' => 'Dinner Ideas',
+            'items' => ['Pizza', 'Tacos', 'Sushi'],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('lists.create', ['template' => $template->id]))
+            ->assertStatus(200)
+            ->assertSee('Use as is')
+            ->assertSee('Make Updates')
+            ->assertSee('Pizza')
+            // the editable item form stays hidden until "Make Updates"
+            ->assertDontSee('Enter an item');
+    }
+
+    #[Test]
+    public function use_as_is_creates_the_list_and_starts_the_voting_flow()
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(CreateList::class)
+            ->set('title', 'Dinner Ideas')
+            ->set('description', 'Our usual options')
+            ->set('items', ['Pizza', 'Tacos', 'Sushi'])
+            ->call('useAsIs')
+            ->assertRedirect(route('lists.vote', ['list' => DecisionList::first()->id]));
+
+        $this->assertDatabaseHas('decision_lists', [
+            'user_id' => $user->id,
+            'title' => 'Dinner Ideas',
+        ]);
+
+        // Matchups are generated at creation, so the list is ready to vote on.
+        $this->assertGreaterThan(0, DecisionList::first()->matchups()->count());
+    }
+
+    #[Test]
+    public function make_updates_reveals_the_editable_item_form()
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(CreateList::class)
+            ->set('fromTemplate', true)
+            ->set('editing', false)
+            ->set('title', 'Dinner Ideas')
+            ->set('items', ['Pizza', 'Tacos'])
+            ->assertDontSee('Enter an item')
+            ->call('makeUpdates')
+            ->assertSet('editing', true)
+            ->assertSee('Enter an item')
+            ->assertSee('Add Another Item');
+    }
+
+    #[Test]
+    public function items_can_be_added_and_removed_after_choosing_make_updates()
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(CreateList::class)
+            ->set('fromTemplate', true)
+            ->set('items', ['Pizza', 'Tacos'])
+            ->call('makeUpdates')
+            ->call('addItem')
+            ->assertCount('items', 3)
+            ->set('items.2', 'Sushi')
+            ->call('removeItem', 0)
+            ->assertCount('items', 2)
+            ->assertSet('items', ['Tacos', 'Sushi']);
     }
 
     #[Test]
